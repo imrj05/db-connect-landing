@@ -1,0 +1,19 @@
+# nixpacks.toml configuration for Next.js 16
+# Optimized for Coolify/Nixpacks deployment
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "npm"]
+
+[phases.install]
+cmds = ["npm install --legacy-peer-deps"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[phases.start]
+cmd = "npm run start"
+
+# Optional: Add environment variables here if needed
+# [variables]
+# NODE_ENV = "production"
+# PORT = "3000"
