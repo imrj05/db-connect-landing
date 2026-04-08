@@ -1,5 +1,6 @@
 import { RiHeartFill, RiTwitterFill, RiGithubFill, RiDiscordFill, RiDatabase2Fill } from "react-icons/ri";
 import ThemeToggle from "./ThemeToggle";
+import Link from "next/link";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -63,13 +64,15 @@ export default function Footer() {
             <div style={{ display: "flex", gap: 12 }}>
               {[
                 { Icon: RiTwitterFill, href: "#" },
-                { Icon: RiGithubFill, href: "#" },
+                { Icon: RiGithubFill, href: "https://github.com/imrj05/db-connect" },
                 { Icon: RiDiscordFill, href: "#" },
               ].map((social, i) => (
                 <a
                   key={i}
                   href={social.href}
                   className="social-btn"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <social.Icon size={18} />
                 </a>
@@ -81,15 +84,19 @@ export default function Footer() {
           {[
             {
               title: "Product",
-              links: ["Features", "Databases", "Roadmap", "Changelog"],
+              links: [
+                { label: "Features", href: "/#features" },
+                { label: "Databases", href: "/#databases" },
+                { label: "Download", href: "https://github.com/imrj05/db-connect/releases/latest" }
+              ],
             },
             {
-              title: "Resources",
-              links: ["Documentation", "API Reference", "Support", "Community"],
-            },
-            {
-              title: "Company",
-              links: ["About", "Blog", "Careers", "Legal"],
+              title: "Legal",
+              links: [
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms of Service", href: "/terms" },
+                { label: "License", href: "https://github.com/imrj05/db-connect/blob/main/LICENSE" }
+              ],
             },
           ].map((col) => (
             <div key={col.title}>
@@ -107,10 +114,16 @@ export default function Footer() {
               </h4>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {col.links.map((link) => (
-                  <li key={link} style={{ marginBottom: 10 }}>
-                    <a href="#" className="footer-link">
-                      {link}
-                    </a>
+                  <li key={link.label} style={{ marginBottom: 10 }}>
+                    {link.href.startsWith("http") ? (
+                      <a href={link.href} className="footer-link" target="_blank" rel="noopener noreferrer">
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link href={link.href} className="footer-link">
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -137,15 +150,15 @@ export default function Footer() {
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
             <div style={{ display: "flex", gap: 20 }}>
-              {["MIT License", "Privacy", "Terms"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="footer-link-sm"
-                >
-                  {item}
-                </a>
-              ))}
+              <a href="https://github.com/imrj05/db-connect/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="footer-link-sm">
+                MIT License
+              </a>
+              <Link href="/privacy" className="footer-link-sm">
+                Privacy
+              </Link>
+              <Link href="/terms" className="footer-link-sm">
+                Terms
+              </Link>
             </div>
             <ThemeToggle />
           </div>

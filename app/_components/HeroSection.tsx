@@ -85,7 +85,7 @@ export default function HeroSection() {
         >
           <a
             id="download-mac"
-            href="#"
+            href="https://github.com/imrj05/db-connect/releases/latest"
             className="btn-primary"
             style={{ fontWeight: 600 }}
           >
@@ -94,7 +94,7 @@ export default function HeroSection() {
           </a>
           <a
             id="download-win"
-            href="#"
+            href="https://github.com/imrj05/db-connect/releases/latest"
             className="btn-secondary"
             style={{ fontWeight: 600 }}
           >

@@ -2,322 +2,220 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { RiCheckFill } from "react-icons/ri";
+import { RiArrowLeftSLine, RiArrowRightSLine } from "react-icons/ri";
+
+const MOCKUPS = [
+  { light: "/Screenshot-light-1.png", dark: "/Screenshot-dark-1.png", label: "Dashboard" },
+  { light: "/Screenshot-light-2.png", dark: "/Screenshot-dark-2.png", label: "Query Editor" },
+  { light: "/Screenshot-light-3.png", dark: "/Screenshot-dark-3.png", label: "Table View" },
+];
 
 export default function HeroMockup() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Auto-advance
+    const interval = setInterval(() => {
+      if (!isHovered) {
+        setActiveIndex((current) => (current + 1) % MOCKUPS.length);
+      }
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [isHovered]);
 
   const isDark = mounted ? resolvedTheme === "dark" : true;
 
+  const handleNext = () => {
+    setActiveIndex((current) => (current + 1) % MOCKUPS.length);
+  };
+
+  const handlePrev = () => {
+    setActiveIndex((current) => (current - 1 + MOCKUPS.length) % MOCKUPS.length);
+  };
+
   return (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: 1000,
-        margin: "0 auto",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-lg)",
-        position: "relative",
-        background: "var(--bg-card)",
-      }}
-    >
-      {/* Titlebar */}
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", alignItems: "center" }}>
+      {/* Main Image Container */}
       <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
-          background: "var(--bg-surface)",
-          borderBottom: "1px solid var(--border)",
-          display: "flex",
-          overflowX: "auto",
+          width: "100%",
+          maxWidth: 1000,
+          margin: "0 auto",
+          borderRadius: "var(--radius-lg)",
+          overflow: "hidden",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-lg)",
+          position: "relative",
+          background: "var(--bg-card)",
+          aspectRatio: "16/10", // Maintains layout integrity, prevents shifting
         }}
       >
-        {[
-          { label: "users", active: true },
-          { label: "orders", active: false },
-          { label: "analytics.sql", active: false },
-        ].map((tab) => (
-          <div
-            key={tab.label}
-            style={{
-              padding: "10px 20px",
-              fontSize: 12,
-              fontFamily: "var(--font-mono)",
-              color: tab.active ? "var(--text-primary)" : "var(--text-muted)",
-              borderBottom: tab.active ? "2px solid var(--text-primary)" : "2px solid transparent",
-              background: tab.active ? "var(--bg-elevated)" : "transparent",
-              whiteSpace: "nowrap",
-              cursor: "default",
-              fontWeight: tab.active ? 600 : 400,
-            }}
-          >
-            {tab.label}
-          </div>
-        ))}
-      </div>
+        {MOCKUPS.map((mockup, idx) => {
+          const isActive = idx === activeIndex;
+          const imageSrc = isDark ? mockup.dark : mockup.light;
+          return (
+            <img
+              key={idx}
+              src={imageSrc}
+              alt={`DBConnect App Mockup - ${mockup.label}`}
+              style={{
+                position: isActive ? "relative" : "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                display: "block",
+                objectFit: "cover",
+                transition: "opacity 0.6s ease-in-out, transform 0.6s ease-in-out",
+                opacity: mounted && isActive ? 1 : 0,
+                transform: isActive ? "scale(1)" : "scale(1.02)",
+                zIndex: isActive ? 1 : 0,
+              }}
+            />
+          );
+        })}
 
-      {/* Body: left sidebar + main content */}
-      <div style={{ display: "flex", height: 420, background: isDark ? "#09090b" : "#ffffff" }}>
-        {/* Sidebar */}
-        <div
+        {/* Previous Button */}
+        <button
+          onClick={handlePrev}
           style={{
-            width: 200,
-            borderRight: "1px solid var(--border)",
-            background: "var(--bg-surface)",
+            position: "absolute",
+            left: 16,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "rgba(0,0,0,0.5)",
+            color: "white",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "50%",
+            width: 44,
+            height: 44,
             display: "flex",
-            flexDirection: "column",
-            padding: "12px 0",
-            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 10,
+            opacity: isHovered ? 1 : 0,
+            visibility: isHovered ? "visible" : "hidden",
+            transition: "all 0.3s ease",
+            backdropFilter: "blur(8px)",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
+          aria-label="Previous screenshot"
+        >
+          <RiArrowLeftSLine size={28} />
+        </button>
+
+        {/* Next Button */}
+        <button
+          onClick={handleNext}
+          style={{
+            position: "absolute",
+            right: 16,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "rgba(0,0,0,0.5)",
+            color: "white",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "50%",
+            width: 44,
+            height: 44,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            zIndex: 10,
+            opacity: isHovered ? 1 : 0,
+            visibility: isHovered ? "visible" : "hidden",
+            transition: "all 0.3s ease",
+            backdropFilter: "blur(8px)",
+          }}
+          onMouseOver={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+          onMouseOut={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
+          aria-label="Next screenshot"
+        >
+          <RiArrowRightSLine size={28} />
+        </button>
+
+        {/* Progress Dots Bottom */}
+        <div 
+          style={{
+            position: "absolute",
+            bottom: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: 8,
+            zIndex: 10,
+            background: "rgba(0,0,0,0.3)",
+            padding: "8px 12px",
+            borderRadius: "20px",
+            backdropFilter: "blur(8px)",
           }}
         >
-          {/* Connection groups */}
-          {[
-            {
-              label: "Production",
-              color: "#ef4444",
-              tables: ["users", "orders", "products"],
-            },
-            {
-              label: "Staging",
-              color: "#f59e0b",
-              tables: ["users", "sessions"],
-            },
-            { label: "Local", color: "#22c55e", tables: ["dev_db"] },
-          ].map((group) => (
-            <div key={group.label} style={{ marginBottom: 8 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 14px",
-                }}
-              >
-                <div
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: group.color,
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: "var(--text-muted)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  {group.label}
-                </span>
-              </div>
-              {group.tables.map((table) => (
-                <div
-                  key={table}
-                  style={{
-                    padding: "6px 14px 6px 26px",
-                    fontSize: 12,
-                    fontFamily: "var(--font-mono)",
-                    color:
-                      group.label === "Production" && table === "users"
-                        ? "var(--text-primary)"
-                        : "var(--text-secondary)",
-                    background:
-                      group.label === "Production" && table === "users"
-                        ? "var(--bg-elevated)"
-                        : "transparent",
-                    cursor: "default",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <rect x="1" y="1" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1" opacity="0.6" />
-                  </svg>
-                  {table}
-                </div>
-              ))}
-            </div>
+          {MOCKUPS.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIndex(idx)}
+              style={{
+                width: idx === activeIndex ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
+                background: idx === activeIndex ? "#fff" : "rgba(255,255,255,0.4)",
+                border: "none",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                cursor: "pointer",
+                padding: 0,
+              }}
+              aria-label={`Go to screenshot ${idx + 1}`}
+            />
           ))}
         </div>
+      </div>
 
-        {/* Main area */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Query editor */}
-          <div
-            style={{
-              padding: "16px 20px",
-              borderBottom: "1px solid var(--border)",
-              fontFamily: "var(--font-mono)",
-              fontSize: 13,
-              lineHeight: 1.7,
-              background: "var(--bg-card)",
-            }}
-          >
-            <div style={{ display: "flex", gap: 16 }}>
-              {/* Line numbers */}
-              <div
-                style={{
-                  color: "var(--text-muted)",
-                  userSelect: "none",
-                  textAlign: "right",
-                  minWidth: 20,
-                  opacity: 0.5,
-                }}
-              >
-                {[1, 2, 3].map((n) => (
-                  <div key={n}>{n}</div>
-                ))}
-              </div>
-              {/* Code */}
-              <div>
-                <div>
-                  <span style={{ color: "#818cf8", fontWeight: 600 }}>SELECT</span>
-                  <span style={{ color: "var(--text-primary)" }}> id, name, email</span>
-                </div>
-                <div>
-                  <span style={{ color: "#818cf8", fontWeight: 600 }}>FROM</span>
-                  <span style={{ color: "var(--text-primary)" }}> users</span>
-                </div>
-                <div>
-                  <span style={{ color: "#818cf8", fontWeight: 600 }}>WHERE</span>
-                  <span style={{ color: "var(--text-primary)" }}> created_at &gt; </span>
-                  <span style={{ color: "#4ade80" }}>&apos;2024-01-01&apos;</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Toolbar */}
-            <div
+      {/* Modern Segmented Navigation below */}
+      <div 
+        style={{ 
+          display: "inline-flex", 
+          justifyContent: "center", 
+          gap: 6,
+          background: "var(--bg-surface)",
+          padding: 6,
+          borderRadius: 24,
+          border: "1px solid var(--border)",
+        }}
+      >
+        {MOCKUPS.map((mockup, idx) => {
+          const isActive = idx === activeIndex;
+          return (
+            <button
+              key={idx}
+              onClick={() => setActiveIndex(idx)}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 16,
+                padding: "8px 20px",
+                borderRadius: "18px",
+                border: "none",
+                background: isActive ? "var(--bg-card)" : "transparent",
+                color: isActive ? "var(--text-primary)" : "var(--text-muted)",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)" : "none",
               }}
             >
-              <button
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "6px 14px",
-                  background: "var(--primary)",
-                  border: "none",
-                  borderRadius: "var(--radius-md)",
-                  color: "var(--primary-foreground)",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Run Query
-              </button>
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                }}
-              >
-                ⌘↵
-              </span>
-              <span
-                style={{
-                  marginLeft: "auto",
-                  fontSize: 11,
-                  color: "#22c55e",
-                  background: "rgba(34,197,94,0.1)",
-                  padding: "4px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  fontWeight: 600,
-                }}
-              >
-                <RiCheckFill size={14} />
-                Execution Success
-              </span>
-            </div>
-          </div>
-
-          {/* Results table */}
-          <div style={{ flex: 1, overflow: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: 12,
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              <thead>
-                <tr style={{ background: "var(--bg-surface)" }}>
-                  {["id", "name", "email", "role"].map((col) => (
-                    <th
-                      key={col}
-                      style={{
-                        padding: "10px 14px",
-                        textAlign: "left",
-                        color: "var(--text-muted)",
-                        fontWeight: 600,
-                        fontSize: 11,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        borderBottom: "1px solid var(--border)",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { id: 1, name: "Alice Johnson", email: "alice@acme.io", role: "admin" },
-                  { id: 2, name: "Bob Chen", email: "bob@devco.com", role: "user" },
-                  { id: 3, name: "Carol Diaz", email: "carol@startup.dev", role: "user" },
-                ].map((row, i) => (
-                  <tr
-                    key={row.id}
-                    style={{
-                      background: i % 2 === 0 ? "transparent" : "var(--bg-surface)",
-                    }}
-                  >
-                    <td style={{ padding: "8px 14px", color: "var(--text-muted)", borderBottom: "1px solid var(--border)" }}>{row.id}</td>
-                    <td style={{ padding: "8px 14px", color: "var(--text-primary)", borderBottom: "1px solid var(--border)" }}>{row.name}</td>
-                    <td style={{ padding: "8px 14px", color: "var(--text-primary)", borderBottom: "1px solid var(--border)" }}>{row.email}</td>
-                    <td style={{ padding: "8px 14px", borderBottom: "1px solid var(--border)" }}>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: "var(--radius-sm)",
-                          fontSize: 11,
-                          fontWeight: 600,
-                          background: "var(--bg-elevated)",
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--border)",
-                        }}
-                      >
-                        {row.role}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              {mockup.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
+

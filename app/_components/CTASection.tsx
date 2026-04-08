@@ -1,6 +1,10 @@
 import { RiAppleFill, RiGithubFill } from "react-icons/ri";
+import { getLatestRelease } from "@/lib/github";
 
-export default function CTASection() {
+export default async function CTASection() {
+  const latestRelease = await getLatestRelease();
+  const version = latestRelease?.tag_name || "v0.9.8"; // Fallback to v0.9.8 if fetch fails
+
   return (
     <section
       id="download"
@@ -71,7 +75,7 @@ export default function CTASection() {
           >
             <a
               id="final-download-btn"
-              href="#"
+              href="https://github.com/imrj05/db-connect/releases/latest"
               className="btn-primary"
               style={{ fontWeight: 600, borderRadius: "8px" }}
             >
@@ -80,7 +84,7 @@ export default function CTASection() {
             </a>
             <a
               id="final-github-btn"
-              href="#"
+              href="https://github.com/imrj05/db-connect"
               className="btn-secondary"
               style={{ fontWeight: 600, borderRadius: "8px" }}
             >
@@ -100,7 +104,7 @@ export default function CTASection() {
           >
             <span style={{ fontSize: 13, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
               <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--neon-primary)" }} />
-              Latest Version: v0.9.8
+              Latest Version: {version}
             </span>
             <div style={{ width: 1, height: 16, background: "var(--border)" }} />
             <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
