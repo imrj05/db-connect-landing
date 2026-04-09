@@ -1,11 +1,11 @@
 import {
-  RiShieldKeyholeLine,
-  RiBarChartBoxLine,
-  RiRobotLine,
-  RiSettings4Line,
-  RiTeamLine,
-} from "react-icons/ri";
-import type { IconType } from "react-icons";
+  SecurityIcon,
+  ChartIcon,
+  RobotIcon,
+  ManagementIcon,
+  TeamIcon,
+} from "./FeatureIcons";
+import type { FC } from "react";
 
 type RoadmapTask = {
   label: string;
@@ -16,7 +16,7 @@ type RoadmapTask = {
 type RoadmapGroup = {
   title: string;
   period: string;
-  Icon: IconType;
+  Icon: FC<any>;
   tasks: RoadmapTask[];
 };
 
@@ -24,7 +24,7 @@ const roadmapData: RoadmapGroup[] = [
   {
     title: "Connectivity & Security",
     period: "Q1 2024",
-    Icon: RiShieldKeyholeLine,
+    Icon: SecurityIcon,
     tasks: [
       { label: "SSH Tunneling", desc: "Securely connect to remote instances via bastion hosts.", status: "completed" },
       { label: "Full SSL/TLS Support", desc: "Native support for custom CA and identity files.", status: "completed" },
@@ -33,7 +33,7 @@ const roadmapData: RoadmapGroup[] = [
   {
     title: "Visual Tools",
     period: "Q2 2024",
-    Icon: RiBarChartBoxLine,
+    Icon: ChartIcon,
     tasks: [
       { label: "ER Diagram Generator", desc: "Visualize your database schema automatically.", status: "in-progress" },
       { label: "Schema Visualization", desc: "Interactive explorer for complex relationships.", status: "planned" },
@@ -42,7 +42,7 @@ const roadmapData: RoadmapGroup[] = [
   {
     title: "AI & Intelligence",
     period: "Q2 2024",
-    Icon: RiRobotLine,
+    Icon: RobotIcon,
     tasks: [
       { label: "Natural Language to SQL", desc: "Describe what you need in plain English.", status: "planned" },
       { label: "AI Query Generation", desc: "Auto-generate boilerplate SQL for common tasks.", status: "planned" },
@@ -51,7 +51,7 @@ const roadmapData: RoadmapGroup[] = [
   {
     title: "Developer Features",
     period: "Q3 2024",
-    Icon: RiSettings4Line,
+    Icon: ManagementIcon,
     tasks: [
       { label: "Schema Versioning", desc: "Track changes to your database structure over time.", status: "planned" },
       { label: "Migration Tools", desc: "Generate and run migrations from the UI.", status: "planned" },
@@ -60,7 +60,7 @@ const roadmapData: RoadmapGroup[] = [
   {
     title: "Collaboration",
     period: "Q4 2024",
-    Icon: RiTeamLine,
+    Icon: TeamIcon,
     tasks: [
       { label: "Team Workspaces", desc: "Sync connections across your engineering team.", status: "planned" },
       { label: "Shared Connections", desc: "Securely share database access with teammates.", status: "planned" },
@@ -122,7 +122,7 @@ export default function RoadmapSection() {
           {roadmapData.map((group) => (
             <div
               key={group.title}
-              className="glass-card"
+              className="group glass-card"
               style={{ 
                 padding: "24px", 
                 height: "100%",
@@ -151,7 +151,7 @@ export default function RoadmapSection() {
                     justifyContent: "center",
                     border: "1px solid var(--border)",
                   }}>
-                    <group.Icon size={16} />
+                    <group.Icon size={18} color="var(--text-primary)" />
                   </div>
                   <h3
                     style={{

@@ -1,5 +1,6 @@
 import HeroMockup from "./HeroMockup";
-import { RiSparklingFill, RiAppleFill, RiWindowsFill, RiGithubFill } from "react-icons/ri";
+import { RiAppleFill, RiWindowsFill, RiGithubFill } from "react-icons/ri";
+import { SparkleIcon } from "./FeatureIcons";
 
 export default function HeroSection() {
   return (
@@ -30,8 +31,8 @@ export default function HeroSection() {
       <div className="section-container" style={{ position: "relative", zIndex: 1 }}>
         {/* Badge */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }} className="animate-fade-in-up">
-          <div className="badge">
-            <RiSparklingFill size={12} style={{ marginRight: 6, color: "var(--accent)" }} />
+          <div className="group badge">
+            <SparkleIcon size={14} color="var(--accent)" style={{ marginRight: 6 }} />
             <span>Native support for MariaDB & SQLite</span>
           </div>
         </div>

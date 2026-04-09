@@ -1,15 +1,15 @@
 import {
-  RiFlashlightFill,
-  RiCrosshair2Fill,
-  RiPlugFill,
-  RiComputerLine,
-  RiPuzzle2Fill,
-} from "react-icons/ri";
-import type { IconType } from "react-icons";
+  SpeedIcon,
+  MinimalIcon,
+  PlugIcon,
+  ComputerIcon,
+  PuzzleIcon,
+} from "./FeatureIcons";
+import type { FC } from "react";
 
 type DiffItem = {
   id: string;
-  Icon: IconType;
+  Icon: FC<any>;
   title: string;
   desc: string;
   accent: string;
@@ -20,7 +20,7 @@ type DiffItem = {
 const differentiators: DiffItem[] = [
   {
     id: "fast",
-    Icon: RiFlashlightFill,
+    Icon: SpeedIcon,
     title: "Blazing fast",
     desc: "No Electron. No web wrapper. Pure native performance with Tauri + Rust backend. Starts in milliseconds.",
     accent: "var(--text-primary)",
@@ -29,7 +29,7 @@ const differentiators: DiffItem[] = [
   },
   {
     id: "minimal",
-    Icon: RiCrosshair2Fill,
+    Icon: MinimalIcon,
     title: "Minimalist UI",
     desc: "Every pixel is intentional. No cluttered toolbars or feature bloat — just you and your data.",
     accent: "var(--text-primary)",
@@ -38,7 +38,7 @@ const differentiators: DiffItem[] = [
   },
   {
     id: "multi",
-    Icon: RiPlugFill,
+    Icon: PlugIcon,
     title: "Multi-database",
     desc: "Connect to MySQL, PostgreSQL, MongoDB, Redis, SQLite, and MariaDB — all in one interface.",
     accent: "var(--text-primary)",
@@ -47,7 +47,7 @@ const differentiators: DiffItem[] = [
   },
   {
     id: "offline",
-    Icon: RiComputerLine,
+    Icon: ComputerIcon,
     title: "Fully local & offline",
     desc: "No telemetry, no cloud sync. Your connection credentials never leave your machine.",
     accent: "var(--text-primary)",
@@ -56,7 +56,7 @@ const differentiators: DiffItem[] = [
   },
   {
     id: "devfirst",
-    Icon: RiPuzzle2Fill,
+    Icon: PuzzleIcon,
     title: "Built for developers",
     desc: "Keyboard‑first UX, SQL‑first interface, and real DBA features. Not a toy for non‑technical users.",
     accent: "var(--text-primary)",
@@ -141,7 +141,7 @@ export default function WhySection() {
 function DiffCard({ Icon, title, desc }: DiffItem) {
   return (
     <div
-      className="diff-card"
+      className="group diff-card"
       style={{
         background: "var(--bg-card)",
         border: "1px solid var(--border)",
@@ -161,7 +161,7 @@ function DiffCard({ Icon, title, desc }: DiffItem) {
           justifyContent: "center",
           border: "1px solid var(--border)",
         }}>
-          <Icon size={16} />
+          <Icon size={18} color="var(--text-primary)" />
         </div>
         <h3
           style={{

@@ -1,42 +1,42 @@
 import { 
-  RiKeyboardLine, 
-  RiTerminalBoxLine, 
-  RiLayout4Line, 
-  RiFoldersLine, 
-  RiCpuLine, 
-  RiPaletteLine 
-} from "react-icons/ri";
+  KeyboardIcon, 
+  TerminalIcon, 
+  LayoutIcon, 
+  FolderIcon, 
+  CPUIcon, 
+  PaletteIcon 
+} from "./FeatureIcons";
 
 const dxFeatures = [
   {
     title: "Keyboard-First",
     desc: "Lightning fast shortcuts (⌘K, ⌘↵) for every action. Never touch your mouse if you don't want to.",
-    Icon: RiKeyboardLine,
+    Icon: KeyboardIcon,
   },
   {
     title: "Command Palette",
     desc: "A powerful unified search and command interface to access features instantly.",
-    Icon: RiTerminalBoxLine,
+    Icon: TerminalIcon,
   },
   {
     title: "Multi-Tab Workspace",
     desc: "Keep dozens of queries open and organized in a familiar tabbed interface.",
-    Icon: RiLayout4Line,
+    Icon: LayoutIcon,
   },
   {
     title: "Grouped Connections",
     desc: "Organize your databases into logical groups like Production, Staging, and Local Dev.",
-    Icon: RiFoldersLine,
+    Icon: FolderIcon,
   },
   {
     title: "Native Performance",
     desc: "Built with Tauri and a high-performance Rust backend. No Electron bloat, just speed.",
-    Icon: RiCpuLine,
+    Icon: CPUIcon,
   },
   {
     title: "Dark & Light Support",
     desc: "Beautifully crafted themes that respect your system settings and reduce eye strain.",
-    Icon: RiPaletteLine,
+    Icon: PaletteIcon,
   },
 ];
 
@@ -87,13 +87,14 @@ export default function DXSection() {
         <div 
           style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
-            gap: 16 
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", 
+            gap: 20 
           }}
         >
           {dxFeatures.map((feat) => (
             <div 
               key={feat.title} 
+              className="group"
               style={{
                 padding: "20px",
                 display: "flex",
@@ -118,7 +119,7 @@ export default function DXSection() {
                   fontSize: 18,
                 }}
               >
-                <feat.Icon />
+                <feat.Icon size={18} color="var(--text-primary)" />
               </div>
               <div>
                 <h3 

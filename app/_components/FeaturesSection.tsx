@@ -1,17 +1,16 @@
+import { RiCheckboxCircleFill } from "react-icons/ri";
 import { 
-  RiFlashlightFill, 
-  RiCodeSSlashFill, 
-  RiTableAltLine, 
-  RiSettings4Line, 
-  RiShieldKeyholeLine,
-  RiCheckboxCircleFill
-} from "react-icons/ri";
+  QueryIcon, 
+  TableIcon, 
+  ManagementIcon, 
+  SecurityIcon 
+} from "./FeatureIcons";
 
 const features = [
   {
     title: "Fast & Powerful Querying",
     subtitle: "SQL editor built for speed with professional features.",
-    icon: <RiCodeSSlashFill />,
+    icon: <QueryIcon />,
     color: "var(--text-primary)",
     items: [
       "Syntax highlighting & Autocomplete",
@@ -23,7 +22,7 @@ const features = [
   {
     title: "Smart Data Viewer",
     subtitle: "Spreadsheet-style interface that handles millions of rows.",
-    icon: <RiTableAltLine />,
+    icon: <TableIcon />,
     color: "var(--text-primary)",
     items: [
       "Inline editing + Modal view",
@@ -35,7 +34,7 @@ const features = [
   {
     title: "Database Management",
     subtitle: "Take full control of your schema and data.",
-    icon: <RiSettings4Line />,
+    icon: <ManagementIcon />,
     color: "var(--text-primary)",
     items: [
       "Create, alter, & drop tables",
@@ -47,7 +46,7 @@ const features = [
   {
     title: "Security & Reliability",
     subtitle: "Your credentials never leave your machine.",
-    icon: <RiShieldKeyholeLine />,
+    icon: <SecurityIcon />,
     color: "var(--text-primary)",
     items: [
       "AES-256 encrypted connections",
@@ -112,6 +111,7 @@ export default function FeaturesSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
+              className="group"
               style={{
                 padding: "24px",
                 display: "flex",
