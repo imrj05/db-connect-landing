@@ -1,4 +1,4 @@
-import { RiHeartFill, RiTwitterFill, RiGithubFill, RiDiscordFill, RiDatabase2Fill } from "react-icons/ri";
+import { RiHeartFill, RiTwitterFill, RiGithubFill, RiDiscordFill } from "react-icons/ri";
 import ThemeToggle from "./ThemeToggle";
 import Link from "next/link";
 
@@ -36,15 +36,12 @@ export default function Footer() {
                 style={{
                   width: 24,
                   height: 24,
-                  borderRadius: "var(--radius-sm)",
-                  background: "var(--primary)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "var(--bg-base)",
                 }}
               >
-                <RiDatabase2Fill size={14} />
+                <img src="/icons/logo.svg" alt="DBConnect Logo" width="20" height="20" />
               </div>
               <span style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
                 DBConnect

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { RiArrowLeftLine, RiDatabase2Fill } from "react-icons/ri";
+import { RiArrowLeftLine } from "react-icons/ri";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -80,16 +80,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             style={{
               width: "40px",
               height: "40px",
-              borderRadius: "var(--radius-md)",
-              background: "var(--primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "var(--bg-base)",
-              boxShadow: "var(--shadow-md)",
             }}
           >
-            <RiDatabase2Fill size={24} />
+            <img src="/icons/logo.svg" alt="DBConnect Logo" width="32" height="32" />
           </div>
           <h1
             style={{

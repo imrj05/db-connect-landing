@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, IBM_Plex_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./_components/ThemeProvider";
 import { Toaster } from "sonner";
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${mono.variable}`}
+        className={`${spaceGrotesk.variable} ${mono.variable}`}
         style={{
           backgroundColor: "var(--bg-base)",
           color: "var(--text-primary)",

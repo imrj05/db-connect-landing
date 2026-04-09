@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { RiDatabase2Fill } from "react-icons/ri";
 
 export default function Navbar() {
   return (
@@ -43,16 +42,13 @@ export default function Navbar() {
             style={{
               width: 28,
               height: 28,
-              borderRadius: "var(--radius-md)",
-              background: "var(--primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
-              color: "var(--bg-base)",
             }}
           >
-            <RiDatabase2Fill size={16} />
+            <img src="/icons/logo.svg" alt="DBConnect Logo" width="24" height="24" />
           </div>
           <span
             style={{

@@ -28,7 +28,7 @@
   --nav-bg: rgba(255, 255, 255, 0.8);
   --nav-border: rgba(0, 0, 0, 0.08);
 
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-mono), "IBM Plex Mono", monospace;
 
   /* Shadcn-Style Radius (Small & Concise) */
