@@ -34,7 +34,8 @@ export async function POST(req: NextRequest) {
       amount: order.amount,
       currency: order.currency,
     });
-  } catch (err: any) {
-    return Response.json({ error: err.message ?? "Failed to create order" }, { status: 500 });
+  } catch (err) {
+    const e = err as { message?: string };
+    return Response.json({ error: e.message ?? "Failed to create order" }, { status: 500 });
   }
 }

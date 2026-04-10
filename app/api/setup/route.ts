@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     await waitForAttributes(PLANS_COL, 8);
     // Seed plan documents
     const existing = await serverDatabases.listDocuments(DB_ID, PLANS_COL);
-    const existingPlanIds = existing.documents.map((d) => (d as { planId: string }).planId);
+    const existingPlanIds = existing.documents.map((d) => (d as unknown as { planId: string }).planId);
     const seeded: string[] = [];
     for (const plan of PLANS) {
       if (existingPlanIds.includes(plan.id)) {
