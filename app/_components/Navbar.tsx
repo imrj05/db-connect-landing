@@ -1,8 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { account } from "@/lib/appwrite";
+import { RiDashboardLine, RiLogoutBoxLine } from "react-icons/ri";
 
 export default function Navbar() {
+  const router = useRouter();
+  const [authState, setAuthState] = useState<"loading" | "logged-in" | "logged-out">("loading");
+
+  useEffect(() => {
+    account.get()
+      .then(() => setAuthState("logged-in"))
+      .catch(() => setAuthState("logged-out"));
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await account.deleteSession("current");
+    } catch {
+      // session may already be gone
+    }
+    setAuthState("logged-out");
+    router.push("/");
+  };
+
   return (
     <header
       style={{
@@ -20,80 +43,66 @@ export default function Navbar() {
     >
       <nav
         className="section-container"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: "64px",
-        }}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "64px" }}
       >
         {/* Logo */}
         <a
           href="#"
-          className="logo-link"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            textDecoration: "none",
-          }}
+          style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}
         >
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <img src="/icons/logo.svg" alt="DBConnect Logo" width="24" height="24" />
-          </div>
-          <span
-            style={{
-              fontWeight: 700,
-              fontSize: 16,
-              letterSpacing: "-0.03em",
-              color: "var(--text-primary)",
-            }}
-          >
+          <img src="/icons/logo.svg" alt="DBConnect Logo" width="24" height="24" />
+          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>
             DBConnect
           </span>
         </a>
 
         {/* Nav Links */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {[
             { label: "Features", href: "#features" },
             { label: "Databases", href: "#databases" },
             { label: "Roadmap", href: "#roadmap" },
           ].map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="nav-link"
-              style={{ padding: "8px 16px" }}
-            >
+            <a key={link.label} href={link.href} className="nav-link" style={{ padding: "8px 16px" }}>
               {link.label}
             </a>
           ))}
         </div>
 
-        {/* CTA */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Link href="/login" className="nav-link" style={{ fontSize: 13, fontWeight: 600, padding: "8px 12px" }}>
-            Sign In
-          </Link>
-          <Link href="/signup" className="btn-primary" style={{ padding: "8px 16px", fontSize: 13, fontWeight: 600 }}>
-            Get Started
-          </Link>
+        {/* CTA — swaps based on auth state */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: "180px", justifyContent: "flex-end" }}>
+          {authState === "loading" ? (
+            /* Skeleton to prevent layout shift */
+            <div style={{ width: "160px", height: "32px", borderRadius: "var(--radius-md)", background: "var(--bg-elevated)" }} />
+          ) : authState === "logged-in" ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="nav-link"
+                style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: 13, fontWeight: 600, padding: "8px 12px" }}
+              >
+                <RiDashboardLine size={15} />
+                Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="btn-secondary"
+                style={{ display: "flex", alignItems: "center", gap: "6px", padding: "7px 14px", fontSize: 13, fontWeight: 600 }}
+              >
+                <RiLogoutBoxLine size={14} />
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="nav-link" style={{ fontSize: 13, fontWeight: 600, padding: "8px 12px" }}>
+                Sign In
+              </Link>
+              <Link href="/signup" className="btn-primary" style={{ padding: "8px 16px", fontSize: 13, fontWeight: 600 }}>
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>

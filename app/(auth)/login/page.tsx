@@ -16,12 +16,16 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
 
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    account.get().then(() => router.replace("/dashboard")).catch(() => {});
+  }, [router]);
+
   // Show error if Appwrite redirected back here due to OAuth failure
   useEffect(() => {
     const error = searchParams.get("error");
     if (error) {
       toast.error(`OAuth failed: ${decodeURIComponent(error)}. Check your Appwrite OAuth provider settings.`);
-      // Clean up the URL
       window.history.replaceState({}, "", "/login");
     }
   }, [searchParams]);

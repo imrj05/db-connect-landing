@@ -7,13 +7,10 @@
  *   curl -X POST https://your-domain.com/api/setup \
  *     -H "Authorization: Bearer <APPWRITE_ADMIN_KEY>"
  */
-
 import { serverDatabases, ID, Permission, Role, DB_ID, PLANS_COLLECTION_ID } from "@/lib/appwrite-server";
 import { PLANS } from "@/lib/plans";
 import type { NextRequest } from "next/server";
-
 const COLLECTION_ID = PLANS_COLLECTION_ID || "plans";
-
 // Poll until all attributes are in "available" state (Appwrite processes them async)
 async function waitForAttributes(expectedCount: number, maxWaitMs = 30_000) {
   const start = Date.now();
@@ -25,7 +22,6 @@ async function waitForAttributes(expectedCount: number, maxWaitMs = 30_000) {
   }
   throw new Error("Timed out waiting for Appwrite attributes to become available");
 }
-
 export async function POST(req: NextRequest) {
   // Auth guard
   const auth = req.headers.get("authorization") ?? "";
@@ -33,7 +29,6 @@ export async function POST(req: NextRequest) {
   if (!token || token !== process.env.APPWRITE_ADMIN_KEY?.replace(/^["']|["']$/g, "")) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   try {
     // 1. Create collection (idempotent — skip if it already exists)
     try {
@@ -43,30 +38,36 @@ export async function POST(req: NextRequest) {
         "Plans",
         [Permission.read(Role.any())]
       );
-
-      // 2. Create attributes
-      await Promise.all([
-        serverDatabases.createStringAttribute(DB_ID, COLLECTION_ID, "planId", 50, true),
-        serverDatabases.createStringAttribute(DB_ID, COLLECTION_ID, "name", 100, true),
-        serverDatabases.createStringAttribute(DB_ID, COLLECTION_ID, "priceLabel", 50, true),
-        serverDatabases.createFloatAttribute(DB_ID, COLLECTION_ID, "price", true),
-        serverDatabases.createIntegerAttribute(DB_ID, COLLECTION_ID, "pricePaise", true),
-        serverDatabases.createIntegerAttribute(DB_ID, COLLECTION_ID, "maxDevices", true),
-        serverDatabases.createIntegerAttribute(DB_ID, COLLECTION_ID, "durationDays", true),
-        serverDatabases.createBooleanAttribute(DB_ID, COLLECTION_ID, "isPopular", true),
-      ]);
-
-      // 3. Wait for attributes to be ready before inserting documents
-      await waitForAttributes(8);
-    } catch (err: any) {
-      // 409 = collection already exists; safe to continue to seeding
-      if (!err.message?.includes("already exists") && err.code !== 409) throw err;
+    } catch (err) {
+      const e = err as { code?: number; message?: string };
+      if (e.code !== 409 && !e.message?.includes("already exists")) throw err;
     }
 
+    // 2. Create each attribute independently (idempotent — skip if already exists)
+    const attributeOps: Array<() => Promise<unknown>> = [
+      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "planId", size: 50, required: true }),
+      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "name", size: 100, required: true }),
+      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "priceLabel", size: 50, required: true }),
+      () => serverDatabases.createFloatAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "price", required: true }),
+      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "pricePaise", required: true }),
+      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "maxDevices", required: true }),
+      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "durationDays", required: true }),
+      () => serverDatabases.createBooleanAttribute({ databaseId: DB_ID, collectionId: COLLECTION_ID, key: "isPopular", required: true }),
+    ];
+    for (const op of attributeOps) {
+      try {
+        await op();
+      } catch (err) {
+        const e = err as { code?: number; message?: string };
+        if (e.code !== 409 && !e.message?.includes("already exists")) throw err;
+      }
+    }
+
+    // 3. Wait for attributes to be ready before inserting documents
+    await waitForAttributes(8);
     // 4. Seed / upsert plan documents
     const existing = await serverDatabases.listDocuments(DB_ID, COLLECTION_ID);
     const existingPlanIds = existing.documents.map((d: any) => d.planId);
-
     const seeded: string[] = [];
     for (const plan of PLANS) {
       if (existingPlanIds.includes(plan.id)) {
@@ -85,7 +86,6 @@ export async function POST(req: NextRequest) {
       });
       seeded.push(plan.id);
     }
-
     return Response.json({
       ok: true,
       collectionId: COLLECTION_ID,
