@@ -138,6 +138,7 @@ export async function POST(req: NextRequest) {
     // ── Plans ─────────────────────────────────────────────────────────────
     await ensureCollection(PLANS_COL, "Plans", [Permission.read(Role.any())]);
     await ensureAttributes([
+      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "documentId", size: 36, required: false }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "planId", size: 50, required: true }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "name", size: 100, required: true }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "priceLabel", size: 50, required: true }),
@@ -147,7 +148,7 @@ export async function POST(req: NextRequest) {
       () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "durationDays", required: true }),
       () => serverDatabases.createBooleanAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "isPopular", required: true }),
     ]);
-    await waitForAttributes(PLANS_COL, 8);
+    await waitForAttributes(PLANS_COL, 9);
     // Seed plan documents
     const existing = await serverDatabases.listDocuments(DB_ID, PLANS_COL);
     const existingPlanIds = existing.documents.map((d) => (d as unknown as { planId: string }).planId);
@@ -157,7 +158,9 @@ export async function POST(req: NextRequest) {
         seeded.push(`${plan.id} (skipped)`);
         continue;
       }
-      await serverDatabases.createDocument(DB_ID, PLANS_COL, ID.unique(), {
+      const planDocId = ID.unique();
+      await serverDatabases.createDocument(DB_ID, PLANS_COL, planDocId, {
+        documentId: planDocId,
         planId: plan.id,
         name: plan.name,
         priceLabel: plan.priceLabel,
@@ -173,6 +176,7 @@ export async function POST(req: NextRequest) {
     // No collection-level read permission — documents use per-user permissions
     await ensureCollection(LICENSES_COL, "Licenses", []);
     await ensureAttributes([
+      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "documentId", size: 36, required: false }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "userId", size: 36, required: true }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "planId", size: 50, required: true }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "planName", size: 100, required: true }),
@@ -188,7 +192,7 @@ export async function POST(req: NextRequest) {
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "signature", size: 2048, required: false }),
       () => serverDatabases.createBooleanAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "isRevoked", required: false, xdefault: false }),
     ]);
-    await waitForAttributes(LICENSES_COL, 14);
+    await waitForAttributes(LICENSES_COL, 15);
     await ensureIndexes([
       () => serverDatabases.createIndex({
         databaseId: DB_ID,
@@ -201,6 +205,7 @@ export async function POST(req: NextRequest) {
     // ── Activations ───────────────────────────────────────────────────────
     await ensureCollection(DEVICES_COL, "Activations", []);
     await ensureAttributes([
+      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "documentId", size: 36, required: false }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "licenseId", size: 36, required: true }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "userId", size: 36, required: true }),
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "licenseKey", size: 64, required: false }),
@@ -210,7 +215,7 @@ export async function POST(req: NextRequest) {
       () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "lastSeen", size: 50, required: false }),
       () => serverDatabases.createDatetimeAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "activatedAt", required: false }),
     ]);
-    await waitForAttributes(DEVICES_COL, 7);
+    await waitForAttributes(DEVICES_COL, 9);
     await ensureIndexes([
       () => serverDatabases.createIndex({
         databaseId: DB_ID,
