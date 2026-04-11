@@ -18,7 +18,6 @@ export type LicenseDocument = {
   $createdAt: string;
   $updatedAt: string;
   $permissions: string[];
-  documentId?: string;
   userId?: string;
   email?: string;
   plan?: string;
@@ -46,7 +45,6 @@ export type ActivationDocument = {
   $createdAt: string;
   $updatedAt: string;
   $permissions: string[];
-  documentId?: string;
   licenseId?: string;
   licenseKey?: string;
   deviceId?: string;
@@ -137,13 +135,11 @@ export async function upsertActivation(params: {
     };
   }
 
-  const activationDocId = ID.unique();
   const created = await serverDatabases.createDocument(
     DB_ID,
     ACTIVATIONS_COLLECTION_ID,
-    activationDocId,
+    ID.unique(),
     {
-      documentId: activationDocId,
       licenseId: params.license.$id,
       licenseKey: getLicenseLookupKey(params.license.licenseKey ?? params.license.license_key ?? ""),
       userId: params.license.userId ?? "",

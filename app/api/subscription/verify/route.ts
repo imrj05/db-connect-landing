@@ -71,13 +71,11 @@ export async function POST(req: NextRequest) {
       plan: plan.id,
     });
 
-    const licenseDocId = ID.unique();
     const license = await serverDatabases.createDocument(
       DB_ID,
       LICENSES_COLLECTION_ID,
-      licenseDocId,
+      ID.unique(),
       {
-        documentId: licenseDocId,
         userId,
         planId: plan.id,
         planName: plan.name,
