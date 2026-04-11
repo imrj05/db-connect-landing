@@ -72,7 +72,7 @@ function pemToBinary(publicKey: string): ArrayBuffer {
     .replace(/\\n/gu, "\n")
     .trim();
 
-  return decodeBase64(pemBody).buffer;
+  return decodeBase64(pemBody).buffer as ArrayBuffer;
 }
 
 function stableStringify(value: unknown): string {
@@ -186,7 +186,7 @@ async function importPublicKey(publicKey: string, algorithm: SupportedLicenseAlg
   const crypto = getCrypto();
   const keyData = publicKey.includes("BEGIN PUBLIC KEY")
     ? pemToBinary(publicKey)
-    : decodeBase64(publicKey).buffer;
+    : (decodeBase64(publicKey).buffer as ArrayBuffer);
 
   if (algorithm === "ECDSA-P256") {
     return crypto.subtle.importKey(
@@ -215,7 +215,7 @@ async function verifyCandidate(
 ): Promise<boolean> {
   const crypto = getCrypto();
   const payload = new TextEncoder().encode(candidate);
-  const signatureBytes = decodeBase64(signature);
+  const signatureBytes = decodeBase64(signature) as Uint8Array<ArrayBuffer>;
 
   if (algorithm === "ECDSA-P256") {
     return crypto.subtle.verify(
