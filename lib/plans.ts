@@ -18,9 +18,9 @@ export const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    priceLabel: "₹799/mo",
-    price: 799,
-    pricePaise: 79900,        // ₹799 in paise
+    priceLabel: "₹299/mo",
+    price: 299,
+    pricePaise: 29900,        // ₹299 in paise
     maxDevices: 3,
     durationDays: 30,
     popular: true,
@@ -32,24 +32,6 @@ export const PLANS = [
       "Priority support",
     ],
   },
-  {
-    id: "team",
-    name: "Team",
-    priceLabel: "₹2,499/mo",
-    price: 2499,
-    pricePaise: 249900,       // ₹2,499 in paise
-    maxDevices: 10,
-    durationDays: 30,
-    popular: false,
-    features: [
-      "10 devices",
-      "Everything in Pro",
-      "Shared workspaces",
-      "Role-based access",
-      "Advanced analytics",
-    ],
-  },
 ] as const;
-
 export type Plan = (typeof PLANS)[number];
 export type PlanId = Plan["id"];

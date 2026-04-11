@@ -6,386 +6,390 @@ import { account, databases, DB_ID, LICENSES_COLLECTION_ID, DEVICES_COLLECTION_I
 import { Query } from "appwrite";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  RiLoader5Line,
-  RiUserLine,
-  RiShieldCheckLine,
-  RiTimeLine,
-  RiPriceTag3Line,
-  RiDeviceLine,
-  RiFileCopyLine,
-  RiCheckDoubleLine,
-  RiArrowRightLine,
-  RiErrorWarningLine,
+    RiLoader5Line,
+    RiUserLine,
+    RiShieldCheckLine,
+    RiTimeLine,
+    RiPriceTag3Line,
+    RiDeviceLine,
+    RiFileCopyLine,
+    RiCheckDoubleLine,
+    RiArrowRightLine,
+    RiErrorWarningLine,
 } from "react-icons/ri";
 import type { Models } from "appwrite";
 
 type License = Models.Document & {
-  planId: string;
-  planName: string;
-  licenseKey: string;
-  status: "active" | "expired";
-  expiresAt: string;
-  maxDevices: number;
-  price: number;
+    planId: string;
+    planName: string;
+    licenseKey: string;
+    status: "active" | "expired";
+    expiresAt: string;
+    maxDevices: number;
+    price: number;
 };
 
 function isLifetime(expiresAt: string) {
-  return expiresAt === "lifetime" || new Date(expiresAt).getFullYear() - new Date().getFullYear() > 20;
+    return expiresAt === "lifetime" || new Date(expiresAt).getFullYear() - new Date().getFullYear() > 20;
 }
 
 function daysRemaining(expiresAt: string) {
-  return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
+    return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
+}
+
+function LoadingState() {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <RiLoader5Line className="animate-spin text-muted-foreground" size={28} />
+        </div>
+    );
+}
+
+function Divider() {
+    return <div className="h-px bg-border" />;
+}
+
+function isTokenError(error: unknown) {
+    if (typeof error !== "object" || error === null) {
+        return false;
+    }
+
+    const maybeError = error as { code?: unknown; message?: unknown };
+    const message = typeof maybeError.message === "string" ? maybeError.message.toLowerCase() : "";
+
+    return (
+        maybeError.code === 401 ||
+        message.includes("token") ||
+        message.includes("expired")
+    );
 }
 
 function DashboardContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
-  const [license, setLicense] = useState<License | null>(null);
-  const [deviceCount, setDeviceCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+    const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+    const [license, setLicense] = useState<License | null>(null);
+    const [deviceCount, setDeviceCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const userId = searchParams.get("userId");
-        const secret = searchParams.get("secret");
-
-        if (userId && secret) {
-          try {
-            await account.createSession(userId, secret);
-          } catch (err: any) {
-            // Token already used or expired — try getting existing session instead
-            // This handles the case where the user refreshes /dashboard?userId=X&secret=Y
-            const isTokenError =
-              err?.code === 401 ||
-              err?.message?.toLowerCase().includes("token") ||
-              err?.message?.toLowerCase().includes("expired");
-            if (!isTokenError) throw err;
-          }
-          window.history.replaceState({}, "", "/dashboard");
-        }
-
-        const me = await account.get();
-        setUser(me);
-
-        // Fetch active license
-        const licRes = await databases.listDocuments<License>(DB_ID, LICENSES_COLLECTION_ID, [
-          Query.equal("userId", me.$id),
-          Query.equal("status", "active"),
-          Query.orderDesc("$createdAt"),
-          Query.limit(1),
-        ]);
-
-        if (licRes.documents.length > 0) {
-          const lic = licRes.documents[0];
-          setLicense(lic);
-
-          // Fetch device count
-          if (DEVICES_COLLECTION_ID) {
+    useEffect(() => {
+        const init = async () => {
             try {
-              const devRes = await databases.listDocuments(DB_ID, DEVICES_COLLECTION_ID, [
-                Query.equal("licenseId", lic.$id),
-              ]);
-              setDeviceCount(devRes.total);
+                const userId = searchParams.get("userId");
+                const secret = searchParams.get("secret");
+
+                if (userId && secret) {
+                    try {
+                        await account.createSession(userId, secret);
+                    } catch (err: unknown) {
+                        // Token already used or expired — try getting existing session instead
+                        // This handles the case where the user refreshes /dashboard?userId=X&secret=Y
+                        if (!isTokenError(err)) {
+                            throw err;
+                        }
+                    }
+                    window.history.replaceState({}, "", "/dashboard");
+                }
+
+                const me = await account.get();
+                setUser(me);
+
+                // Fetch active license
+                const licRes = await databases.listDocuments<License>(DB_ID, LICENSES_COLLECTION_ID, [
+                    Query.equal("userId", me.$id),
+                    Query.equal("status", "active"),
+                    Query.orderDesc("$createdAt"),
+                    Query.limit(1),
+                ]);
+
+                if (licRes.documents.length > 0) {
+                    const lic = licRes.documents[0];
+                    setLicense(lic);
+
+                    // Fetch device count
+                    if (DEVICES_COLLECTION_ID) {
+                        try {
+                            const devRes = await databases.listDocuments(DB_ID, DEVICES_COLLECTION_ID, [
+                                Query.equal("licenseId", lic.$id),
+                            ]);
+                            setDeviceCount(devRes.total);
+                        } catch {
+                            // Devices collection may not be set up yet
+                        }
+                    }
+                }
             } catch {
-              // Devices collection may not be set up yet
+                router.replace("/login");
+            } finally {
+                setLoading(false);
             }
-          }
-        }
-      } catch {
-        router.replace("/login");
-      } finally {
-        setLoading(false);
-      }
+        };
+        init();
+    }, [router, searchParams]);
+
+    const handleCopy = () => {
+        if (!license) return;
+        navigator.clipboard.writeText(license.licenseKey);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
-    init();
-  }, [router, searchParams]);
 
-  const handleCopy = () => {
-    if (!license) return;
-    navigator.clipboard.writeText(license.licenseKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    if (loading) {
+        return <LoadingState />;
+    }
 
-  if (loading) {
+    if (!user) return null;
+
+    const lifetime = license ? isLifetime(license.expiresAt) : false;
+    const days = license && !lifetime ? daysRemaining(license.expiresAt) : null;
+    const isExpiringSoon = days !== null && days <= 7;
+    const isExpired = license?.status === "expired" || (days !== null && days === 0);
+
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
-        <RiLoader5Line className="animate-spin" size={28} style={{ color: "var(--text-muted)" }} />
-      </div>
-    );
-  }
+        <div className="space-y-6 p-2 md:p-0">
+            <section className="dashboard-pane overflow-hidden p-6 md:p-8">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-foreground/12 to-transparent" />
+                <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <span className="eyebrow-label">Dashboard</span>
+                        <h1 className="dashboard-heading mt-2">
+                            Overview
+                        </h1>
+                        <p className="dashboard-subheading max-w-2xl">
+                            Welcome back{user.name ? `, ${user.name}` : ""}. Track your license health, device usage, and account status from one place.
+                        </p>
+                    </div>
 
-  if (!user) return null;
-
-  const lifetime = license ? isLifetime(license.expiresAt) : false;
-  const days = license && !lifetime ? daysRemaining(license.expiresAt) : null;
-  const isExpiringSoon = days !== null && days <= 7;
-  const isExpired = license?.status === "expired" || (days !== null && days === 0);
-
-  return (
-    <div style={{ padding: "40px" }}>
-      {/* Heading */}
-      <div style={{ marginBottom: "32px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-          Overview
-        </h1>
-        <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "4px" }}>
-          Welcome back{user.name ? `, ${user.name}` : ""}.
-        </p>
-      </div>
-
-      {/* Top stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
-        {/* Account */}
-        <div className="glass-card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <RiUserLine size={14} style={{ color: "var(--text-muted)" }} />
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Account</span>
-          </div>
-          <div>
-            <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)" }}>{user.name || "—"}</p>
-            <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>{user.email}</p>
-          </div>
-        </div>
-
-        {/* Plan */}
-        <div className="glass-card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <RiPriceTag3Line size={14} style={{ color: "var(--text-muted)" }} />
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Plan</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)" }}>
-                {license ? license.planName : "No plan"}
-              </p>
-              <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
-                {license ? (license.price === 0 ? "Free forever" : `₹${license.price}/mo`) : "Choose a plan to get started"}
-              </p>
-            </div>
-            {license && (
-              <span
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  padding: "2px 8px",
-                  borderRadius: "99px",
-                  background: isExpired ? "var(--bg-elevated)" : "#dcfce7",
-                  color: isExpired ? "var(--text-muted)" : "#16a34a",
-                  border: `1px solid ${isExpired ? "var(--border)" : "#bbf7d0"}`,
-                }}
-              >
-                {isExpired ? "Expired" : "Active"}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Devices */}
-        <div className="glass-card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <RiDeviceLine size={14} style={{ color: "var(--text-muted)" }} />
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Devices</span>
-          </div>
-          <div>
-            <p style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)" }}>
-              {license ? `${deviceCount} / ${license.maxDevices}` : "—"}
-            </p>
-            <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
-              {license ? "Active device slots" : "No license active"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* License detail card */}
-      {license ? (
-        <div className="glass-card" style={{ padding: "24px", marginBottom: "24px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <RiShieldCheckLine size={16} style={{ color: "var(--text-muted)" }} />
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>License</span>
-            </div>
-            <Link
-              href="/dashboard/billing"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "12px",
-                color: "var(--text-secondary)",
-                textDecoration: "none",
-                fontWeight: 500,
-              }}
-            >
-              Manage <RiArrowRightLine size={13} />
-            </Link>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            {/* License key row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "13px", color: "var(--text-secondary)", minWidth: "100px" }}>License key</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--text-primary)", letterSpacing: "0.05em" }}>
-                  {license.licenseKey}
-                </span>
-                <button
-                  onClick={handleCopy}
-                  title="Copy"
-                  style={{ background: "none", border: "none", cursor: "pointer", color: copied ? "#16a34a" : "var(--text-muted)", padding: "2px", display: "flex", alignItems: "center" }}
-                >
-                  {copied ? <RiCheckDoubleLine size={14} /> : <RiFileCopyLine size={14} />}
-                </button>
-              </div>
-            </div>
-
-            <div style={{ height: "1px", background: "var(--border)" }} />
-
-            {/* Expiry row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "13px", color: "var(--text-secondary)", minWidth: "100px" }}>Expires</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
-                  {lifetime
-                    ? "Lifetime"
-                    : new Date(license.expiresAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
-                </span>
-                {!lifetime && days !== null && (
-                  <span style={{
-                    fontSize: "11px",
-                    padding: "1px 7px",
-                    borderRadius: "99px",
-                    border: "1px solid var(--border)",
-                    background: "var(--bg-elevated)",
-                    color: isExpiringSoon ? "#dc2626" : "var(--text-muted)",
-                  }}>
-                    {days === 0 ? "Expired" : `${days}d left`}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div style={{ height: "1px", background: "var(--border)" }} />
-
-            {/* Member since row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "13px", color: "var(--text-secondary)", minWidth: "100px" }}>Activated</span>
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "var(--text-primary)" }}>
-                {new Date(license.$createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
-              </span>
-            </div>
-
-            <div style={{ height: "1px", background: "var(--border)" }} />
-
-            {/* Device slots row */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "13px", color: "var(--text-secondary)", minWidth: "100px" }}>Devices</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 500, color: deviceCount >= license.maxDevices ? "#dc2626" : "var(--text-primary)" }}>
-                  {deviceCount} / {license.maxDevices} used
-                </span>
-                <div style={{ display: "flex", gap: "3px" }}>
-                  {Array.from({ length: license.maxDevices }).map((_, i) => (
-                    <div key={i} style={{
-                      width: "8px", height: "8px", borderRadius: "50%",
-                      background: i < deviceCount ? "var(--accent)" : "var(--bg-elevated)",
-                      border: "1px solid var(--border)",
-                    }} />
-                  ))}
+                    <div className="flex flex-wrap gap-2">
+                        <Link href="/dashboard/billing" className="btn-secondary rounded-full px-4 py-2 text-[13px]">
+                            Manage billing
+                        </Link>
+                        <Link href="/dashboard/profile" className="btn-primary rounded-full px-4 py-2 text-[13px]">
+                            Update profile
+                        </Link>
+                    </div>
                 </div>
-              </div>
-            </div>
-          </div>
+            </section>
 
-          {/* Expiring soon warning */}
-          {isExpiringSoon && !isExpired && (
-            <div style={{
-              marginTop: "16px",
-              padding: "10px 14px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "var(--radius-md)",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}>
-              <RiErrorWarningLine size={15} style={{ color: "#dc2626", flexShrink: 0 }} />
-              <span style={{ fontSize: "12px", color: "#dc2626" }}>
-                Your license expires in {days} day{days !== 1 ? "s" : ""}. <Link href="/dashboard/billing" style={{ fontWeight: 600, color: "#dc2626" }}>Renew now →</Link>
-              </span>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* No license CTA */
-        <div className="glass-card" style={{ padding: "24px", marginBottom: "24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <p style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>No active license</p>
-            <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>
-              Choose a plan to activate DBConnect on your devices.
-            </p>
-          </div>
-          <Link href="/dashboard/billing" className="btn-primary" style={{ padding: "8px 18px", fontSize: "13px", whiteSpace: "nowrap" }}>
-            Get a plan
-          </Link>
-        </div>
-      )}
+            <div className="grid gap-4 xl:grid-cols-4">
+                <div className="dashboard-kpi flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <RiUserLine size={14} />
+                        <span className="dashboard-kpi-label">Account</span>
+                    </div>
+                    <div>
+                        <p className="dashboard-kpi-value">{user.name || "—"}</p>
+                        <p className="dashboard-kpi-copy mt-1">{user.email}</p>
+                    </div>
+                </div>
 
-      {/* Account info row */}
-      <div className="glass-card" style={{ padding: "24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-          <RiTimeLine size={15} style={{ color: "var(--text-muted)" }} />
-          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>Account</span>
+                <div className="dashboard-kpi flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <RiPriceTag3Line size={14} />
+                        <span className="dashboard-kpi-label">Plan</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                        <div>
+                            <p className="dashboard-kpi-value">
+                                {license ? license.planName : "No plan"}
+                            </p>
+                            <p className="dashboard-kpi-copy mt-1">
+                                {license ? (license.price === 0 ? "Free forever" : `₹${license.price}/mo`) : "Choose a plan to get started"}
+                            </p>
+                        </div>
+                        {license && (
+                            <span
+                                className={isExpired ? "status-pill status-pill-neutral" : "status-pill status-pill-active"}
+                            >
+                                {isExpired ? "Expired" : "Active"}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="dashboard-kpi flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <RiDeviceLine size={14} />
+                        <span className="dashboard-kpi-label">Devices</span>
+                    </div>
+                    <div>
+                        <p className="dashboard-kpi-value">
+                            {license ? `${deviceCount} / ${license.maxDevices}` : "—"}
+                        </p>
+                        <p className="dashboard-kpi-copy mt-1">
+                            {license ? "Active device slots" : "No license active"}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="dashboard-kpi flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <RiTimeLine size={14} />
+                        <span className="dashboard-kpi-label">Renewal</span>
+                    </div>
+                    <div>
+                        <p className="dashboard-kpi-value">
+                            {!license ? "—" : lifetime ? "Lifetime" : `${days} days`}
+                        </p>
+                        <p className="dashboard-kpi-copy mt-1">
+                            {!license ? "No active license" : lifetime ? "No renewal required" : isExpired ? "License expired" : isExpiringSoon ? "Renew soon" : "License healthy"}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {license ? (
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)]">
+                    <section className="dashboard-section">
+                        <div className="dashboard-panel-header">
+                            <div className="flex items-center gap-2 text-foreground">
+                                <RiShieldCheckLine size={16} className="text-muted-foreground" />
+                                <span className="text-sm font-semibold">License</span>
+                            </div>
+                            <Link
+                                href="/dashboard/billing"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                Manage <RiArrowRightLine size={13} />
+                            </Link>
+                        </div>
+
+                        <div className="flex flex-col gap-3.5">
+                            <div className="detail-row">
+                                <span className="detail-label min-w-24">License key</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono text-[13px] tracking-[0.05em] text-foreground">
+                                        {license.licenseKey}
+                                    </span>
+                                    <button
+                                        onClick={handleCopy}
+                                        title="Copy"
+                                        className={copied ? "text-emerald-600 dark:text-emerald-300" : "text-muted-foreground transition-colors hover:text-foreground"}
+                                    >
+                                        {copied ? <RiCheckDoubleLine size={14} /> : <RiFileCopyLine size={14} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <Divider />
+
+                            <div className="detail-row">
+                                <span className="detail-label min-w-24">Expires</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="detail-value">
+                                        {lifetime
+                                            ? "Lifetime"
+                                            : new Date(license.expiresAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+                                    </span>
+                                    {!lifetime && days !== null && (
+                                        <span className={isExpiringSoon ? "status-pill status-pill-danger" : "status-pill status-pill-neutral"}>
+                                            {days === 0 ? "Expired" : `${days}d left`}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Divider />
+
+                            <div className="detail-row">
+                                <span className="detail-label min-w-24">Activated</span>
+                                <span className="detail-value">
+                                    {new Date(license.$createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+                                </span>
+                            </div>
+
+                            <Divider />
+
+                            <div className="detail-row">
+                                <span className="detail-label min-w-24">Devices</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={deviceCount >= license.maxDevices ? "detail-value text-rose-600 dark:text-rose-300" : "detail-value"}>
+                                        {deviceCount} / {license.maxDevices} used
+                                    </span>
+                                    <div className="flex gap-0.75">
+                                        {Array.from({ length: license.maxDevices }).map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className={i < deviceCount ? "size-2 rounded-full border border-border bg-brand" : "size-2 rounded-full border border-border bg-elevated"}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {isExpiringSoon && !isExpired && (
+                            <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs text-rose-600 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300">
+                                <RiErrorWarningLine size={15} className="shrink-0" />
+                                <span>
+                                    Your license expires in {days} day{days !== 1 ? "s" : ""}. <Link href="/dashboard/billing" className="font-semibold underline-offset-2 hover:underline">Renew now →</Link>
+                                </span>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="dashboard-section">
+                        <div className="dashboard-panel-header">
+                            <div className="flex items-center gap-2 text-foreground">
+                                <RiTimeLine size={15} className="text-muted-foreground" />
+                                <span className="text-sm font-semibold">Account</span>
+                            </div>
+                            <Link href="/dashboard/profile" className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                                Edit <RiArrowRightLine size={13} />
+                            </Link>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                            {[
+                                { label: "Name", value: user.name || "—" },
+                                { label: "Email", value: user.email },
+                                {
+                                    label: "Verification",
+                                    value: user.emailVerification ? "Verified" : "Not verified",
+                                    highlight: user.emailVerification,
+                                },
+                                {
+                                    label: "Member since",
+                                    value: new Date(user.$createdAt).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }),
+                                },
+                            ].map(({ label, value, highlight }, i, arr) => (
+                                <React.Fragment key={label}>
+                                    <div className="detail-row">
+                                        <span className="detail-label">{label}</span>
+                                        <span className={highlight === true ? "detail-value text-emerald-600 dark:text-emerald-300" : highlight === false ? "detail-value text-rose-600 dark:text-rose-300" : "detail-value"}>
+                                            {value}
+                                        </span>
+                                    </div>
+                                    {i < arr.length - 1 && <Divider />}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+            ) : (
+                <div className="dashboard-section flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">No active license</p>
+                        <p className="mt-1 text-[13px] text-muted-foreground">
+                            Choose a plan to activate DBConnect on your devices.
+                        </p>
+                    </div>
+                    <Link href="/dashboard/billing" className="btn-primary whitespace-nowrap px-4.5 py-2 text-[13px]">
+                        Get a plan
+                    </Link>
+                </div>
+            )}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {[
-            { label: "Name", value: user.name || "—" },
-            { label: "Email", value: user.email },
-            {
-              label: "Verification",
-              value: user.emailVerification ? "Verified" : "Not verified",
-              highlight: user.emailVerification,
-            },
-            {
-              label: "Member since",
-              value: new Date(user.$createdAt).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }),
-            },
-          ].map(({ label, value, highlight }, i, arr) => (
-            <React.Fragment key={label}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{label}</span>
-                <span style={{
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  color: highlight === true ? "#16a34a" : highlight === false ? "#dc2626" : "var(--text-primary)",
-                }}>
-                  {value}
-                </span>
-              </div>
-              {i < arr.length - 1 && <div style={{ height: "1px", background: "var(--border)" }} />}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default function DashboardPage() {
-  return (
-    <React.Suspense
-      fallback={
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
-          <RiLoader5Line className="animate-spin" size={28} style={{ color: "var(--text-muted)" }} />
-        </div>
-      }
-    >
-      <DashboardContent />
-    </React.Suspense>
-  );
+    return (
+        <React.Suspense
+            fallback={<LoadingState />}
+        >
+            <DashboardContent />
+        </React.Suspense>
+    );
 }

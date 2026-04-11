@@ -5,106 +5,30 @@ import Link from "next/link";
 import { RiArrowLeftLine } from "react-icons/ri";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "var(--bg-base)",
-        position: "relative",
-        padding: "24px",
-        overflow: "hidden",
-      }}
-    >
-      {/* Background Decoration */}
-      <div
-        className="dot-grid"
-        style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.3,
-          maskImage: "radial-gradient(circle at 50% 50%, black, transparent 80%)",
-          WebkitMaskImage: "radial-gradient(circle at 50% 50%, black, transparent 80%)",
-          pointerEvents: "none",
-          zIndex: 0,
-        }}
-      />
+    return (
+        <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-6 py-24">
+            <div className="dot-grid mask-radial-fade pointer-events-none absolute inset-0 opacity-30" />
 
-      {/* Back to Home */}
-      <div
-        style={{
-          position: "absolute",
-          top: "32px",
-          left: "32px",
-          zIndex: 10,
-        }}
-      >
-        <Link
-          href="/"
-          className="nav-link"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            fontSize: "14px",
-            fontWeight: 500,
-          }}
-        >
-          <RiArrowLeftLine />
-          Back to Home
-        </Link>
-      </div>
+            <div className="absolute left-6 top-8 z-10 sm:left-8">
+                <Link href="/" className="nav-link gap-2 text-sm">
+                    <RiArrowLeftLine />
+                    Back to Home
+                </Link>
+            </div>
 
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "400px",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        {/* Logo */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "12px",
-            marginBottom: "32px",
-          }}
-        >
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <img src="/icons/logo.svg" alt="DBConnect Logo" width="32" height="32" />
-          </div>
-          <h1
-            style={{
-              fontSize: "20px",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              color: "var(--text-primary)",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            DBConnect
-            <span className="badge-alpha" style={{ fontSize: "11px", marginLeft: "4px" }}>Alpha</span>
-          </h1>
+            <div className="relative z-10 w-full max-w-sm">
+                <div className="mb-8 flex flex-col items-center gap-3 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-2xl bg-elevated ring-1 ring-border/80">
+                        <img src="/icons/logo.svg" alt="DBConnect Logo" width="32" height="32" />
+                    </div>
+                    <h1 className="flex items-center gap-1 text-xl font-extrabold tracking-tight text-foreground">
+                        DBConnect
+                        <span className="badge-alpha ml-1">Alpha</span>
+                    </h1>
+                </div>
+
+                {children}
+            </div>
         </div>
-
-        {children}
-      </div>
-    </div>
-  );
+    );
 }

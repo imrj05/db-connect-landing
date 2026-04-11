@@ -1,13 +1,23 @@
 import crypto from "crypto";
-import { serverDatabases, ID, Permission, Role, Query, DB_ID, LICENSES_COLLECTION_ID } from "@/lib/appwrite-server";
+import { serverDatabases, serverUsers, ID, Permission, Role, Query, DB_ID, LICENSES_COLLECTION_ID } from "@/lib/appwrite-server";
+import { buildSignedLicenseData } from "@/lib/license/sign";
 import { PLANS } from "@/lib/plans";
 import type { NextRequest } from "next/server";
+import { getErrorMessage } from "@/lib/utils";
 
 function generateLicenseKey(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const seg = () =>
     Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   return `DBK-${seg()}-${seg()}-${seg()}-${seg()}`;
+}
+
+function getExpiryDate(durationDays: number): string {
+  if (durationDays === 0) {
+    return "lifetime";
+  }
+
+  return new Date(Date.now() + durationDays * 86_400_000).toISOString();
 }
 
 export async function POST(req: NextRequest) {
@@ -48,9 +58,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Create new license using admin key (bypasses client permissions)
-    const expiresAt = new Date(
-      Date.now() + plan.durationDays * 86_400_000
-    ).toISOString();
+    const user = await serverUsers.get(userId);
+    const issuedAt = new Date().toISOString();
+    const licenseKey = generateLicenseKey();
+    const expiresAt = getExpiryDate(plan.durationDays);
+    const signedLicense = await buildSignedLicenseData({
+      email: user.email,
+      expiry: expiresAt,
+      issuedAt,
+      licenseKey,
+      maxDevices: plan.maxDevices,
+      plan: plan.id,
+    });
 
     const license = await serverDatabases.createDocument(
       DB_ID,
@@ -60,10 +79,9 @@ export async function POST(req: NextRequest) {
         userId,
         planId: plan.id,
         planName: plan.name,
-        licenseKey: generateLicenseKey(),
+        ...signedLicense,
         status: "active",
         expiresAt,
-        maxDevices: plan.maxDevices,
         price: plan.price,
       },
       [
@@ -73,7 +91,7 @@ export async function POST(req: NextRequest) {
     );
 
     return Response.json({ license });
-  } catch (err: any) {
-    return Response.json({ error: err.message ?? "Verification failed" }, { status: 500 });
+  } catch (err: unknown) {
+    return Response.json({ error: getErrorMessage(err, "Verification failed") }, { status: 500 });
   }
 }
