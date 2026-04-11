@@ -151,8 +151,14 @@ export default function BillingPage() {
                     setLicense(lic);
                     await fetchDevices(lic.$id);
                 }
-            } catch {
-                router.replace("/login");
+            } catch (err: unknown) {
+                const e = err as { code?: number; message?: string };
+                const isAuthError =
+                    e.code === 401 ||
+                    typeof e.message === "string" && (e.message.includes("token") || e.message.includes("expired"));
+                if (isAuthError) {
+                    router.replace("/login");
+                }
             } finally {
                 setLoading(false);
             }

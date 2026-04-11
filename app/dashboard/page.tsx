@@ -120,8 +120,12 @@ function DashboardContent() {
                         }
                     }
                 }
-            } catch {
-                router.replace("/login");
+            } catch (err: unknown) {
+                if (isTokenError(err)) {
+                    router.replace("/login");
+                }
+                // Non-auth errors (network, permissions on licenses collection, etc.)
+                // should not log the user out — just stop loading
             } finally {
                 setLoading(false);
             }
