@@ -1,5 +1,7 @@
 import { RiAppleFill, RiGithubFill } from "react-icons/ri";
 import { getLatestRelease } from "@/lib/github";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default async function CTASection() {
   const latestRelease = await getLatestRelease();
@@ -8,106 +10,61 @@ export default async function CTASection() {
   return (
     <section
       id="download"
-      style={{
-        padding: "160px 0",
-        position: "relative",
-        overflow: "hidden",
-        textAlign: "center",
-        background: "var(--bg-base)",
-      }}
+      className="relative py-24 md:py-40 overflow-hidden text-center bg-background isolate"
     >
-      {/* Background gradients */}
+      {/* Background Pattern */}
       <div
+        className="dot-grid absolute inset-0 opacity-50 pointer-events-none -z-1"
         style={{
-          position: "absolute",
-          inset: 0,
-          background: "radial-gradient(ellipse at center, rgba(99,102,241,0.05) 0%, transparent 60%)",
-          pointerEvents: "none",
+          maskImage: "radial-gradient(circle at center, black, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(circle at center, black, transparent 80%)",
         }}
       />
+      {/* Background gradients */}
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.05)_0%,transparent_60%)] pointer-events-none -z-1"
+      />
 
-      <div className="section-container" style={{ position: "relative" }}>
-        <div 
-          style={{ 
-            padding: "64px 32px", 
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            borderRadius: "8px",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          <div className="badge" style={{ margin: "0 auto 24px" }}>
-            Get Started
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(32px, 4vw, 56px)",
-              fontWeight: 800,
-              letterSpacing: "-0.05em",
-              color: "var(--text-primary)",
-              marginBottom: 20,
-              lineHeight: 1.1,
-            }}
-          >
+      <div className="section-container relative">
+        <div className="p-8 md:p-16 bg-card border border-border rounded-lg shadow-sm">
+          <Badge className="mx-auto mb-6">Get Started</Badge>
+          <h2 className="text-[clamp(30px,4vw,48px)] font-extrabold tracking-tight text-foreground mb-5 leading-[1.15]">
             Built for developers who <br />
             live in their database.
           </h2>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 18,
-              maxWidth: 600,
-              margin: "0 auto 40px",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="text-secondary text-[17px] max-w-[600px] mx-auto mb-10 leading-relaxed font-medium">
             Experience the fastest native database client ever built. 
             Download today and upgrade your workflow.
           </p>
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              gap: 12,
-            }}
-          >
-            <a
-              id="final-download-btn"
-              href="https://github.com/imrj05/db-connect/releases/latest"
-              className="btn-primary"
-              style={{ fontWeight: 600, borderRadius: "8px" }}
-            >
-              <RiAppleFill size={18} />
-              Download Now
-            </a>
-            <a
-              id="final-github-btn"
-              href="https://github.com/imrj05/db-connect"
-              className="btn-secondary"
-              style={{ fontWeight: 600, borderRadius: "8px" }}
-            >
-              <RiGithubFill size={18} />
-              View on GitHub
-            </a>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg" className="h-12 px-8 font-semibold rounded-md">
+              <a
+                id="final-download-btn"
+                href="https://github.com/imrj05/db-connect/releases/latest"
+              >
+                <RiAppleFill size={18} />
+                Download Now
+              </a>
+            </Button>
+            <Button asChild variant="secondary" size="lg" className="h-12 px-8 font-semibold rounded-md">
+              <a
+                id="final-github-btn"
+                href="https://github.com/imrj05/db-connect"
+              >
+                <RiGithubFill size={18} />
+                View on GitHub
+              </a>
+            </Button>
           </div>
 
-          <div
-            style={{
-              marginTop: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 24,
-            }}
-          >
-            <span style={{ fontSize: 13, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--neon-primary)" }} />
+          <div className="mt-10 flex items-center justify-center gap-6">
+            <span className="text-[13px] text-muted flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent" />
               Latest Version: {version}
             </span>
-            <div style={{ width: 1, height: 16, background: "var(--border)" }} />
-            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            <div className="w-px h-4 bg-border" />
+            <span className="text-[13px] text-muted">
               License: MIT
             </span>
           </div>

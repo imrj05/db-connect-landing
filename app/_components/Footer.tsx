@@ -6,59 +6,24 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer
-      style={{
-        borderTop: "1px solid var(--border)",
-        background: "var(--bg-surface)",
-        padding: "48px 0 32px",
-      }}
-    >
+    <footer className="border-t border-border bg-surface py-12 pb-8">
       <div className="section-container">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 32,
-            marginBottom: 48,
-          }}
-        >
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-8 mb-12">
           {/* Brand col */}
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 16,
-              }}
-            >
-              <div
-                style={{
-                  width: 24,
-                  height: 24,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-6 h-6 flex items-center justify-center">
                 <img src="/icons/logo.svg" alt="DBConnect Logo" width="20" height="20" />
               </div>
-              <span style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+              <span className="font-bold text-base text-foreground tracking-tight">
                 DBConnect
               </span>
+              <span className="badge-alpha">Alpha</span>
             </div>
-            <p
-              style={{
-                fontSize: 14,
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-                maxWidth: 240,
-                marginBottom: 24,
-              }}
-            >
+            <p className="text-sm text-secondary leading-relaxed max-w-[240px] mb-6">
               The fast, modern database GUI for desktop. Built for developers by developers.
             </p>
-            <div style={{ display: "flex", gap: 12 }}>
+            <div className="flex gap-3">
               {[
                 { Icon: RiTwitterFill, href: "#" },
                 { Icon: RiGithubFill, href: "https://github.com/imrj05/db-connect" },
@@ -67,7 +32,7 @@ export default function Footer() {
                 <a
                   key={i}
                   href={social.href}
-                  className="social-btn"
+                  className="social-btn w-9 h-9 flex items-center justify-center rounded-md border border-border text-secondary hover:text-foreground hover:bg-elevated transition-colors"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -84,6 +49,7 @@ export default function Footer() {
               links: [
                 { label: "Features", href: "/#features" },
                 { label: "Databases", href: "/#databases" },
+                { label: "Pricing", href: "/#pricing" },
                 { label: "Download", href: "https://github.com/imrj05/db-connect/releases/latest" }
               ],
             },
@@ -97,27 +63,26 @@ export default function Footer() {
             },
           ].map((col) => (
             <div key={col.title}>
-              <h4
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                  marginBottom: 16,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
+              <h4 className="text-[13px] font-semibold text-foreground uppercase tracking-wider mb-4">
                 {col.title}
               </h4>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <ul className="list-none p-0 m-0 space-y-2.5">
                 {col.links.map((link) => (
-                  <li key={link.label} style={{ marginBottom: 10 }}>
+                  <li key={link.label}>
                     {link.href.startsWith("http") ? (
-                      <a href={link.href} className="footer-link" target="_blank" rel="noopener noreferrer">
+                      <a 
+                        href={link.href} 
+                        className="footer-link text-[13.5px] text-secondary hover:text-foreground transition-colors" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
                         {link.label}
                       </a>
                     ) : (
-                      <Link href={link.href} className="footer-link">
+                      <Link 
+                        href={link.href} 
+                        className="footer-link text-[13.5px] text-secondary hover:text-foreground transition-colors"
+                      >
                         {link.label}
                       </Link>
                     )}
@@ -129,31 +94,26 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div
-          style={{
-            paddingTop: 32,
-            borderTop: "1px solid var(--border)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <p style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5 }}>
+        <div className="pt-8 border-t border-border flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted flex items-center gap-1.5">
             &copy; {year} DBConnect. Made with{" "}
-            <RiHeartFill size={12} color="#f472b6" />{" "}
+            <RiHeartFill size={12} className="text-pink-400" />{" "}
             for developers.
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
-            <div style={{ display: "flex", gap: 20 }}>
-              <a href="https://github.com/imrj05/db-connect/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="footer-link-sm">
+          <div className="flex items-center gap-8">
+            <div className="flex gap-5">
+              <a 
+                href="https://github.com/imrj05/db-connect/blob/main/LICENSE" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-[12px] text-muted hover:text-foreground transition-colors"
+              >
                 MIT License
               </a>
-              <Link href="/privacy" className="footer-link-sm">
+              <Link href="/privacy" className="text-[12px] text-muted hover:text-foreground transition-colors">
                 Privacy
               </Link>
-              <Link href="/terms" className="footer-link-sm">
+              <Link href="/terms" className="text-[12px] text-muted hover:text-foreground transition-colors">
                 Terms
               </Link>
             </div>

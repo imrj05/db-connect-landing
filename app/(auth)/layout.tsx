@@ -93,9 +93,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               fontWeight: 800,
               letterSpacing: "-0.03em",
               color: "var(--text-primary)",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
             }}
           >
             DBConnect
+            <span className="badge-alpha" style={{ fontSize: "11px", marginLeft: "4px" }}>Alpha</span>
           </h1>
         </div>
 

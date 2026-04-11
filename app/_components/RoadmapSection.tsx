@@ -5,6 +5,7 @@ import {
   ManagementIcon,
   TeamIcon,
 } from "./FeatureIcons";
+import { Badge } from "@/components/ui/badge";
 import type { FC } from "react";
 
 type RoadmapTask = {
@@ -72,137 +73,70 @@ export default function RoadmapSection() {
   return (
     <section
       id="roadmap"
-      style={{
-        padding: "100px 0",
-        position: "relative",
-        background: "var(--bg-base)",
-        borderTop: "1px solid var(--border)",
-      }}
+      className="relative py-24 md:py-32 bg-background border-t border-border isolate"
     >
-      <div className="section-container">
+      {/* Background Pattern */}
+      <div
+        className="dot-grid absolute inset-0 opacity-50 pointer-events-none -z-1"
+        style={{
+          maskImage: "radial-gradient(circle at center, black, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(circle at center, black, transparent 80%)",
+        }}
+      />
+      <div className="section-container relative">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <div className="badge" style={{ margin: "0 auto 16px" }}>
-            The Roadmap
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 48px)",
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-              color: "var(--text-primary)",
-              marginBottom: 16,
-              lineHeight: 1.1,
-            }}
-          >
+        <div className="text-center mb-16">
+          <Badge className="mb-4">The Roadmap</Badge>
+          <h2 className="text-[clamp(26px,3vw,36px)] font-extrabold tracking-tight mb-4 text-foreground leading-[1.15]">
             Developing the Future of Data
           </h2>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 17,
-              maxWidth: 580,
-              margin: "0 auto",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="text-secondary text-[16.5px] max-w-[580px] mx-auto leading-relaxed">
             Our mission is to build the fastest, most capable database client 
             for modern development workflows.
           </p>
         </div>
 
         {/* Roadmap Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 20,
-          }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
           {roadmapData.map((group) => (
             <div
               key={group.title}
-              className="group glass-card"
-              style={{ 
-                padding: "24px", 
-                height: "100%",
-                background: "var(--bg-card)",
-                borderRadius: "var(--radius-lg)",
-                border: "1px solid var(--border)",
-              }}
+              className="group flex flex-col h-full p-6 glass-card bg-card border border-border rounded-lg"
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 24,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--bg-elevated)",
-                    color: "var(--text-primary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid var(--border)",
-                  }}>
-                    <group.Icon size={18} color="var(--text-primary)" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-md bg-elevated text-foreground flex items-center justify-center border border-border">
+                    <group.Icon size={18} className="text-foreground" />
                   </div>
-                  <h3
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      color: "var(--text-primary)",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
+                  <h3 className="text-base font-bold text-foreground tracking-tight">
                     {group.title}
                   </h3>
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
                   {group.period}
                 </span>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="flex flex-col gap-4">
                 {group.tasks.map((task) => (
                   <div
                     key={task.label}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 12,
-                      opacity: task.status === "completed" ? 0.6 : 1,
-                    }}
+                    className={`flex items-start gap-3 ${task.status === "completed" ? "opacity-60" : "opacity-100"}`}
                   >
                     <div
-                      style={{
-                        marginTop: 4,
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        border: "1.5px solid",
-                        borderColor: task.status !== "planned" ? "var(--text-primary)" : "var(--border)",
-                        background: task.status === "completed" ? "var(--text-primary)" : "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
+                      className={`mt-1 w-3.5 h-3.5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0
+                        ${task.status !== "planned" ? "border-foreground" : "border-border"}
+                        ${task.status === "completed" ? "bg-foreground" : "bg-transparent"}
+                      `}
                     >
                       {task.status === "completed" && (
-                        <svg width="8" height="8" viewBox="0 0 10 10" fill="none">
-                          <path d="M2 5l2 2 4-4" stroke="var(--bg-card)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="8" height="8" viewBox="0 0 10 10" fill="none" className="block">
+                          <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-card" />
                         </svg>
                       )}
                     </div>
                     <div>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)" }}>
+                      <div className="text-[13.5px] font-semibold text-foreground leading-tight">
                         {task.label}
                       </div>
                     </div>

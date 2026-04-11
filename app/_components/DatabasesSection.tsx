@@ -7,6 +7,7 @@ import {
   SiSqlite 
 } from "react-icons/si";
 import { RiCloudFill, RiHardDriveFill, RiShieldCheckFill } from "react-icons/ri";
+import { Badge } from "@/components/ui/badge";
 
 const dbList = [
   { id: "mysql", Icon: SiMysql, name: "MySQL" },
@@ -21,80 +22,40 @@ export default function DatabasesSection() {
   return (
     <section
       id="databases"
-      style={{
-        padding: "100px 0",
-        position: "relative",
-        background: "var(--bg-base)",
-      }}
+      className="relative py-24 md:py-32 bg-surface border-y border-border isolate"
     >
-      <div className="section-container">
+      {/* Background Pattern */}
+      <div
+        className="dot-grid absolute inset-0 opacity-40 pointer-events-none -z-1"
+        style={{
+          maskImage: "radial-gradient(circle at center, black, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(circle at center, black, transparent 80%)",
+        }}
+      />
+      <div className="section-container relative">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <div className="badge" style={{ margin: "0 auto 16px" }}>
-            Connectivity
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 48px)",
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-              marginBottom: 16,
-              color: "var(--text-primary)",
-              lineHeight: 1.1,
-            }}
-          >
+        <div className="text-center mb-14">
+          <Badge className="mb-4">Connectivity</Badge>
+          <h2 className="text-[clamp(26px,3vw,36px)] font-extrabold tracking-tight mb-4 text-foreground leading-[1.15]">
             Works seamlessly with Local & Cloud
           </h2>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 17,
-              maxWidth: 580,
-              margin: "0 auto",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="text-secondary text-[16.5px] max-w-[580px] mx-auto leading-relaxed">
             Connect to any major database directly. No middleman, no heavy 
             drivers — just pure speed.
           </p>
         </div>
 
         {/* Database Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: 16,
-            maxWidth: 1000,
-            margin: "0 auto 48px",
-          }}
-        >
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-6xl mx-auto mb-12">
           {dbList.map((db) => (
             <div
               key={db.id}
-              className="glass-card"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 12,
-                padding: "24px 16px",
-                textAlign: "center",
-                background: "var(--bg-card)",
-                borderRadius: "var(--radius-lg)",
-                border: "1px solid var(--border)",
-              }}
+              className="glass-card flex flex-col items-center gap-3 p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:bg-card/80 group"
             >
-              <div 
-                style={{ 
-                  fontSize: 28,
-                  color: "var(--text-primary)",
-                  opacity: 0.7,
-                }}
-              >
+              <div className="text-[28px] text-foreground opacity-70 group-hover:opacity-100 group-hover:text-accent transition-all duration-300">
                 <db.Icon />
               </div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+              <span className="text-[13px] font-semibold text-foreground tracking-tight">
                 {db.name}
               </span>
             </div>
@@ -102,15 +63,7 @@ export default function DatabasesSection() {
         </div>
 
         {/* Capabilities pills */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            flexWrap: "wrap",
-          }}
-        >
+        <div className="flex items-center justify-center gap-2 flex-wrap">
           {[
             { Icon: RiHardDriveFill, text: "Local Databases" },
             { Icon: RiCloudFill, text: "AWS RDS / Supabase" },
@@ -118,20 +71,9 @@ export default function DatabasesSection() {
           ].map((pill) => (
             <div
               key={pill.text}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 12.5,
-                padding: "8px 16px",
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                color: "var(--text-primary)",
-                borderRadius: "99px",
-                fontWeight: 500,
-              }}
+              className="flex items-center gap-2 text-[12.5px] px-4 py-2 bg-elevated border border-border text-foreground rounded-full font-medium"
             >
-              <pill.Icon size={14} style={{ opacity: 0.6 }} />
+              <pill.Icon size={14} className="opacity-60" />
               {pill.text}
             </div>
           ))}

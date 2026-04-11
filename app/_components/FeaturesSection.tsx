@@ -5,13 +5,13 @@ import {
   ManagementIcon, 
   SecurityIcon 
 } from "./FeatureIcons";
+import { Badge } from "@/components/ui/badge";
 
 const features = [
   {
     title: "Fast & Powerful Querying",
     subtitle: "SQL editor built for speed with professional features.",
     icon: <QueryIcon />,
-    color: "var(--text-primary)",
     items: [
       "Syntax highlighting & Autocomplete",
       "Multi-tab query workspace",
@@ -23,7 +23,6 @@ const features = [
     title: "Smart Data Viewer",
     subtitle: "Spreadsheet-style interface that handles millions of rows.",
     icon: <TableIcon />,
-    color: "var(--text-primary)",
     items: [
       "Inline editing + Modal view",
       "Robust sorting, filtering, & search",
@@ -35,7 +34,6 @@ const features = [
     title: "Database Management",
     subtitle: "Take full control of your schema and data.",
     icon: <ManagementIcon />,
-    color: "var(--text-primary)",
     items: [
       "Create, alter, & drop tables",
       "Manage indexes & relationships",
@@ -47,7 +45,6 @@ const features = [
     title: "Security & Reliability",
     subtitle: "Your credentials never leave your machine.",
     icon: <SecurityIcon />,
-    color: "var(--text-primary)",
     items: [
       "AES-256 encrypted connections",
       "OS Keychain integration",
@@ -61,125 +58,61 @@ export default function FeaturesSection() {
   return (
     <section
       id="features"
-      style={{
-        padding: "100px 0",
-        position: "relative",
-        background: "var(--bg-base)",
-        borderTop: "1px solid var(--border)",
-      }}
+      className="relative py-24 md:py-32 bg-background border-t border-border isolate"
     >
-      <div className="section-container">
+      {/* Background Pattern */}
+      <div
+        className="dot-grid absolute inset-0 opacity-50 pointer-events-none -z-1"
+        style={{
+          maskImage: "radial-gradient(circle at center, black, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(circle at center, black, transparent 80%)",
+        }}
+      />
+      <div className="section-container relative">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <div className="badge" style={{ margin: "0 auto 16px" }}>
-            Capabilities
-          </div>
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 48px)",
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-              color: "var(--text-primary)",
-              marginBottom: 16,
-              lineHeight: 1.1,
-            }}
-          >
+        <div className="text-center mb-16">
+          <Badge className="mb-4">Capabilities</Badge>
+          <h2 className="text-[clamp(26px,3vw,36px)] font-extrabold tracking-tight mb-4 text-foreground leading-[1.15]">
             Built for Developer Flow
           </h2>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 17,
-              maxWidth: 580,
-              margin: "0 auto",
-              lineHeight: 1.6,
-            }}
-          >
+          <p className="text-secondary text-[16.5px] max-w-[580px] mx-auto leading-relaxed">
             We&apos;ve combined native performance with a minimal interface 
             to help you ship faster and manage better.
           </p>
         </div>
 
         {/* Feature Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: 20,
-          }}
-        >
-          {features.map((feature) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {features.map((feature, idx) => (
             <div
               key={feature.title}
-              className="group"
-              style={{
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                background: "var(--bg-card)",
-                borderRadius: "var(--radius-lg)",
-                border: "1px solid var(--border)",
-              }}
+              className="group flex flex-col h-full p-8 glass-card bg-card border border-border rounded-xl transition-all duration-300 hover:shadow-lg hover:border-accent/30 hover:-translate-y-1 relative overflow-hidden"
             >
+              {/* Subtle accent glow on hover */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-3xl rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
               {/* Icon Container */}
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--bg-elevated)",
-                  color: "var(--text-primary)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 20,
-                  marginBottom: 20,
-                  border: "1px solid var(--border)",
-                }}
-              >
+              <div className="w-12 h-12 rounded-lg bg-elevated text-foreground flex items-center justify-center text-2xl mb-6 border border-border group-hover:bg-accent group-hover:text-white transition-colors duration-300 shadow-sm">
                 {feature.icon}
               </div>
 
               {/* Text content */}
-              <h3
-                style={{
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                  letterSpacing: "-0.02em",
-                  marginBottom: 10,
-                }}
-              >
+              <h3 className="text-xl font-bold text-foreground tracking-tight mb-3">
                 {feature.title}
               </h3>
-              <p
-                style={{
-                  fontSize: 14,
-                  color: "var(--text-secondary)",
-                  lineHeight: 1.6,
-                  marginBottom: 20,
-                }}
-              >
+              <p className="text-[15px] text-secondary leading-relaxed mb-8">
                 {feature.subtitle}
               </p>
               
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, marginTop: "auto" }}>
+              <ul className="list-none flex flex-col gap-4 mt-auto">
                 {feature.items.map((item) => (
                   <li
                     key={item}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 10,
-                      fontSize: 13.5,
-                      color: "var(--text-secondary)",
-                      lineHeight: 1.4,
-                    }}
+                    className="flex items-start gap-3 text-[14px] text-secondary leading-tight group-hover:text-foreground/80 transition-colors duration-200"
                   >
                     <RiCheckboxCircleFill
-                      style={{ color: "var(--text-primary)", flexShrink: 0, marginTop: 2, opacity: 0.8 }}
-                      size={16}
+                      className="text-accent flex-shrink-0 mt-0.5 opacity-80"
+                      size={18}
                     />
                     <span>{item}</span>
                   </li>

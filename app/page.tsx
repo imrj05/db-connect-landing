@@ -5,6 +5,7 @@ import FeaturesSection from "./_components/FeaturesSection";
 import DXSection from "./_components/DXSection";
 import WhySection from "./_components/WhySection";
 import RoadmapSection from "./_components/RoadmapSection";
+import PricingSection from "./_components/PricingSection";
 import CTASection from "./_components/CTASection";
 import Footer from "./_components/Footer";
 
@@ -19,6 +20,7 @@ export default function Home() {
         <DXSection />
         <WhySection />
         <RoadmapSection />
+        <PricingSection />
         <CTASection />
       </main>
       <Footer />

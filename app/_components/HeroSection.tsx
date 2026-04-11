@@ -1,55 +1,36 @@
 import HeroMockup from "./HeroMockup";
-import { RiAppleFill, RiWindowsFill, RiGithubFill } from "react-icons/ri";
+import { RiAppleFill, RiWindowsFill } from "react-icons/ri";
 import { SparkleIcon } from "./FeatureIcons";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default function HeroSection() {
   return (
     <section
       id="hero"
-      style={{
-        position: "relative",
-        paddingTop: "140px",
-        paddingBottom: "100px",
-        overflow: "hidden",
-        backgroundColor: "var(--bg-base)",
-      }}
+      className="relative pt-32 md:pt-48 pb-20 md:pb-32 overflow-hidden bg-background isolate"
     >
       {/* Background Dot Grid */}
       <div
-        className="dot-grid"
+        className="dot-grid absolute inset-0 opacity-80 pointer-events-none -z-1"
         style={{
-          position: "absolute",
-          inset: 0,
-          opacity: 0.5,
           maskImage: "radial-gradient(ellipse 60% 50% at 50% 0%, black 20%, transparent 80%)",
           WebkitMaskImage: "radial-gradient(ellipse 60% 50% at 50% 0%, black 20%, transparent 80%)",
-          pointerEvents: "none",
-          zIndex: 0,
         }}
       />
 
-      <div className="section-container" style={{ position: "relative", zIndex: 1 }}>
+      <div className="section-container relative">
         {/* Badge */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }} className="animate-fade-in-up">
-          <div className="group badge">
-            <SparkleIcon size={14} color="var(--accent)" style={{ marginRight: 6 }} />
+        <div className="flex justify-center mb-8 animate-fade-in-up">
+          <Badge className="group py-1 px-3">
+            <SparkleIcon size={14} className="mr-1.5 text-accent" />
             <span>Native support for MariaDB & SQLite</span>
-          </div>
+          </Badge>
         </div>
 
         {/* Headline */}
         <h1
-          className="animate-fade-in-up delay-100"
-          style={{
-            textAlign: "center",
-            fontSize: "clamp(40px, 5.5vw, 76px)",
-            fontWeight: 800,
-            letterSpacing: "-0.05em",
-            marginBottom: 20,
-            maxWidth: 1000,
-            margin: "0 auto 20px",
-            color: "var(--text-primary)",
-          }}
+          className="animate-fade-in-up delay-100 text-center text-[clamp(2rem,5vw,3.75rem)] font-extrabold tracking-tight leading-[1.05] mb-6 max-w-4xl mx-auto text-foreground"
         >
           A Fast, Modern Database GUI <br />
           for macOS & Windows
@@ -57,16 +38,7 @@ export default function HeroSection() {
 
         {/* Subheadline */}
         <p
-          className="animate-fade-in-up delay-200"
-          style={{
-            textAlign: "center",
-            fontSize: "clamp(16px, 1.8vw, 19px)",
-            color: "var(--text-secondary)",
-            maxWidth: 640,
-            margin: "0 auto 40px",
-            lineHeight: 1.6,
-            letterSpacing: "-0.01em",
-          }}
+          className="animate-fade-in-up delay-200 text-center text-[clamp(0.9375rem,1.6vw,1.125rem)] text-secondary max-w-2xl mx-auto mb-10 leading-relaxed font-medium"
         >
           Connect, query, and manage MySQL, PostgreSQL, MongoDB, Redis, 
           SQLite, and more — all in one professional interface.
@@ -74,52 +46,39 @@ export default function HeroSection() {
 
         {/* Primary CTA Buttons */}
         <div
-          className="animate-fade-in-up delay-300"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 80,
-          }}
+          className="animate-fade-in-up delay-300 flex flex-wrap justify-center items-center gap-3 mb-20"
         >
-          <a
-            id="download-mac"
-            href="https://github.com/imrj05/db-connect/releases/latest"
-            className="btn-primary"
-            style={{ fontWeight: 600 }}
-          >
-            <RiAppleFill size={18} />
-            Download for macOS
-          </a>
-          <a
-            id="download-win"
-            href="https://github.com/imrj05/db-connect/releases/latest"
-            className="btn-secondary"
-            style={{ fontWeight: 600 }}
-          >
-            <RiWindowsFill size={18} />
-            Download for Windows
-          </a>
-          <a
-            id="view-docs"
-            href="#"
-            className="btn-secondary"
-            style={{ fontWeight: 500 }}
-          >
-            Documentation
-          </a>
+          <Button asChild size="lg" className="h-12 px-8 font-semibold">
+            <a
+              id="download-mac"
+              href="https://github.com/imrj05/db-connect/releases/latest"
+            >
+              <RiAppleFill size={18} />
+              Download for macOS
+            </a>
+          </Button>
+          <Button asChild variant="secondary" size="lg" className="h-12 px-8 font-semibold">
+            <a
+              id="download-win"
+              href="https://github.com/imrj05/db-connect/releases/latest"
+            >
+              <RiWindowsFill size={18} />
+              Download for Windows
+            </a>
+          </Button>
+          <Button asChild variant="secondary" size="lg" className="h-12 px-8 font-medium">
+            <a id="view-docs" href="#">
+              Documentation
+            </a>
+          </Button>
         </div>
 
-        {/* App Mockup with concise elevation */}
-        <div 
-          className="animate-fade-in-up delay-300"
-          style={{ 
-            marginTop: 40,
-            position: "relative",
-          }}
-        >
+        {/* App Mockup with concise elevation & glow */}
+        <div className="animate-fade-in-up delay-300 mt-10 relative group">
+          {/* Subtle Glow behind the mockup */}
+          <div 
+            className="absolute -inset-4 bg-[radial-gradient(circle,rgba(99,102,241,0.15)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none -z-1"
+          />
           <HeroMockup />
         </div>
       </div>

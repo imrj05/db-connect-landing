@@ -64,6 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               DBConnect
             </span>
+            <span className="badge-alpha" style={{ fontSize: "9px", padding: "1px 4px", marginLeft: "4px" }}>Alpha</span>
           </Link>
         </div>
 

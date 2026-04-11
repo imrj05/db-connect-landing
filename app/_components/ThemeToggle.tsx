@@ -7,6 +7,7 @@ import {
   RiMoonClearLine, 
   RiComputerLine 
 } from "react-icons/ri";
+import { cn } from "@/lib/utils";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -18,7 +19,7 @@ export default function ThemeToggle() {
   }, []);
 
   if (!mounted) return (
-    <div style={{ width: 104, height: 32, background: "var(--bg-elevated)", borderRadius: "var(--radius-md)", opacity: 0.5 }} />
+    <div className="w-[100px] h-8 bg-elevated rounded-md opacity-50 border border-border" />
   );
 
   const options = [
@@ -31,35 +32,15 @@ export default function ThemeToggle() {
   const activeIndex = currentIndex === -1 ? 1 : currentIndex; // Default to system if not found
 
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-        padding: "2px",
-        position: "relative",
-        width: "100px",
-        height: "32px",
-      }}
-    >
+    <div className="inline-flex items-center bg-surface border border-border rounded-md p-0.5 relative w-[100px] h-8">
       {/* Sliding Active Background (Shadcn style) */}
       <div
-        style={{
-          position: "absolute",
-          top: "2px",
-          left: "2px",
-          width: "30px",
-          height: "26px",
-          background: "var(--bg-elevated)",
-          borderRadius: "var(--radius-sm)",
-          transform: `translateX(${activeIndex * 32}px)`,
-          transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-          pointerEvents: "none",
-          zIndex: 0,
-          border: "1px solid var(--border)",
-        }}
+        className={cn(
+          "absolute top-0.5 left-0.5 w-[30px] h-[26px] bg-elevated rounded-sm border border-border pointer-events-none z-0 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          activeIndex === 0 && "translate-x-0",
+          activeIndex === 1 && "translate-x-8",
+          activeIndex === 2 && "translate-x-16"
+        )}
       />
 
       {options.map((opt) => (
@@ -67,22 +48,10 @@ export default function ThemeToggle() {
           key={opt.value}
           onClick={() => setTheme(opt.value)}
           title={`Set theme to ${opt.label}`}
-          style={{
-            flex: 1,
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "transparent",
-            border: "none",
-            color: theme === opt.value ? "var(--text-primary)" : "var(--text-muted)",
-            cursor: "pointer",
-            position: "relative",
-            zIndex: 1,
-            transition: "color 0.2s ease",
-            padding: 0,
-            width: "32px",
-          }}
+          className={cn(
+            "flex-1 h-full flex items-center justify-center bg-transparent border-none cursor-pointer relative z-1 transition-colors duration-200 p-0 w-8",
+            theme === opt.value ? "text-foreground" : "text-muted"
+          )}
         >
           <opt.Icon size={14} />
         </button>
