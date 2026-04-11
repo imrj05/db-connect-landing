@@ -12,7 +12,7 @@ import type { LicenseLike } from "@/lib/license/types";
 
 export type LicenseDocument = {
   $id: string;
-  $sequence: string;
+  $sequence: number;
   $collectionId: string;
   $databaseId: string;
   $createdAt: string;
@@ -39,7 +39,7 @@ export type LicenseDocument = {
 
 export type ActivationDocument = {
   $id: string;
-  $sequence: string;
+  $sequence: number;
   $collectionId: string;
   $databaseId: string;
   $createdAt: string;
