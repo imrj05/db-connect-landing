@@ -1,4 +1,4 @@
-import { Client, Databases, DatabasesIndexType, ID, Permission, Query, Role, Users } from "node-appwrite";
+import { Client, Databases, IndexType, ID, Permission, Query, Role, Users } from "node-appwrite";
 
 const strip = (v: string | undefined, fallback = "") =>
   (v || fallback).replace(/^["']|["']$/g, "");
@@ -10,7 +10,7 @@ const client = new Client()
 
 export const serverDatabases = new Databases(client);
 export const serverUsers = new Users(client);
-export { DatabasesIndexType, ID, Permission, Role, Query };
+export { IndexType, ID, Permission, Role, Query };
 
 export const DB_ID = strip(process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID);
 export const LICENSES_COLLECTION_ID = strip(process.env.NEXT_PUBLIC_APPWRITE_USER_LICENSE_COLLECTION_ID);

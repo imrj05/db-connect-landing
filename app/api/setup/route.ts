@@ -15,7 +15,7 @@
 import {
   ACTIVATIONS_COLLECTION_ID,
   serverDatabases,
-  DatabasesIndexType,
+  IndexType,
   ID,
   Permission,
   Role,
@@ -138,14 +138,14 @@ export async function POST(req: NextRequest) {
     // ── Plans ─────────────────────────────────────────────────────────────
     await ensureCollection(PLANS_COL, "Plans", [Permission.read(Role.any())]);
     await ensureAttributes([
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "planId", size: 50, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "name", size: 100, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "priceLabel", size: 50, required: true }),
-      () => serverDatabases.createFloatAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "price", required: true }),
-      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "pricePaise", required: true }),
-      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "maxDevices", required: true }),
-      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "durationDays", required: true }),
-      () => serverDatabases.createBooleanAttribute({ databaseId: DB_ID, collectionId: PLANS_COL, key: "isPopular", required: true }),
+      () => serverDatabases.createStringAttribute(DB_ID, PLANS_COL, "planId", 50, true),
+      () => serverDatabases.createStringAttribute(DB_ID, PLANS_COL, "name", 100, true),
+      () => serverDatabases.createStringAttribute(DB_ID, PLANS_COL, "priceLabel", 50, true),
+      () => serverDatabases.createFloatAttribute(DB_ID, PLANS_COL, "price", true),
+      () => serverDatabases.createIntegerAttribute(DB_ID, PLANS_COL, "pricePaise", true),
+      () => serverDatabases.createIntegerAttribute(DB_ID, PLANS_COL, "maxDevices", true),
+      () => serverDatabases.createIntegerAttribute(DB_ID, PLANS_COL, "durationDays", true),
+      () => serverDatabases.createBooleanAttribute(DB_ID, PLANS_COL, "isPopular", true),
     ]);
     await waitForAttributes(PLANS_COL, 8);
     // Seed plan documents
@@ -173,59 +173,41 @@ export async function POST(req: NextRequest) {
     // No collection-level read permission — documents use per-user permissions
     await ensureCollection(LICENSES_COL, "Licenses", []);
     await ensureAttributes([
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "userId", size: 36, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "planId", size: 50, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "planName", size: 100, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "email", size: 255, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "plan", size: 100, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "expiry", size: 50, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "issuedAt", size: 50, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "licenseKey", size: 64, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "status", size: 20, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "expiresAt", size: 50, required: true }),
-      () => serverDatabases.createIntegerAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "maxDevices", required: true }),
-      () => serverDatabases.createFloatAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "price", required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "signature", size: 2048, required: false }),
-      () => serverDatabases.createBooleanAttribute({ databaseId: DB_ID, collectionId: LICENSES_COL, key: "isRevoked", required: false, xdefault: false }),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "userId", 36, true),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "planId", 50, true),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "planName", 100, true),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "email", 255, false),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "plan", 100, false),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "expiry", 50, false),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "issuedAt", 50, false),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "licenseKey", 64, true),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "status", 20, true),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "expiresAt", 50, true),
+      () => serverDatabases.createIntegerAttribute(DB_ID, LICENSES_COL, "maxDevices", true),
+      () => serverDatabases.createFloatAttribute(DB_ID, LICENSES_COL, "price", true),
+      () => serverDatabases.createStringAttribute(DB_ID, LICENSES_COL, "signature", 2048, false),
+      () => serverDatabases.createBooleanAttribute(DB_ID, LICENSES_COL, "isRevoked", false, false),
     ]);
     await waitForAttributes(LICENSES_COL, 14);
     await ensureIndexes([
-      () => serverDatabases.createIndex({
-        databaseId: DB_ID,
-        collectionId: LICENSES_COL,
-        key: "licenseKey_lookup",
-        type: DatabasesIndexType.Key,
-        attributes: ["licenseKey"],
-      }),
+      () => serverDatabases.createIndex(DB_ID, LICENSES_COL, "licenseKey_lookup", IndexType.Key, ["licenseKey"]),
     ]);
     // ── Activations ───────────────────────────────────────────────────────
     await ensureCollection(DEVICES_COL, "Activations", []);
     await ensureAttributes([
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "licenseId", size: 36, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "userId", size: 36, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "licenseKey", size: 64, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "deviceId", size: 128, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "deviceName", size: 200, required: true }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "platform", size: 50, required: false }),
-      () => serverDatabases.createStringAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "lastSeen", size: 50, required: false }),
-      () => serverDatabases.createDatetimeAttribute({ databaseId: DB_ID, collectionId: DEVICES_COL, key: "activatedAt", required: false }),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "licenseId", 36, true),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "userId", 36, true),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "licenseKey", 64, false),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "deviceId", 128, false),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "deviceName", 200, true),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "platform", 50, false),
+      () => serverDatabases.createStringAttribute(DB_ID, DEVICES_COL, "lastSeen", 50, false),
+      () => serverDatabases.createDatetimeAttribute(DB_ID, DEVICES_COL, "activatedAt", false),
     ]);
     await waitForAttributes(DEVICES_COL, 7);
     await ensureIndexes([
-      () => serverDatabases.createIndex({
-        databaseId: DB_ID,
-        collectionId: DEVICES_COL,
-        key: "activation_license_lookup",
-        type: DatabasesIndexType.Key,
-        attributes: ["licenseId"],
-      }),
-      () => serverDatabases.createIndex({
-        databaseId: DB_ID,
-        collectionId: DEVICES_COL,
-        key: "activation_device_lookup",
-        type: DatabasesIndexType.Key,
-        attributes: ["deviceId"],
-      }),
+      () => serverDatabases.createIndex(DB_ID, DEVICES_COL, "activation_license_lookup", IndexType.Key, ["licenseId"]),
+      () => serverDatabases.createIndex(DB_ID, DEVICES_COL, "activation_device_lookup", IndexType.Key, ["deviceId"]),
     ]);
     return Response.json({
       ok: true,
