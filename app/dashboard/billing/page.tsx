@@ -181,6 +181,37 @@ export default function BillingPage() {
         }
     };
 
+    useEffect(() => {
+        if (!license?.$id || !ACTIVATIONS_COLLECTION_ID) {
+            return;
+        }
+
+        const syncDevices = () => {
+            void fetchDevices(license.$id);
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                syncDevices();
+            }
+        };
+
+        const intervalId = window.setInterval(() => {
+            if (document.visibilityState === "visible") {
+                syncDevices();
+            }
+        }, 20000);
+
+        window.addEventListener("focus", syncDevices);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            window.clearInterval(intervalId);
+            window.removeEventListener("focus", syncDevices);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [license?.$id]);
+
     // Free plan — create license directly via client SDK
     const createFreeLicense = async () => {
         const plan = PLANS.find((p) => p.id === "starter")!;
@@ -558,6 +589,9 @@ export default function BillingPage() {
                                             <p className="mt-0.5 text-[11px] text-muted-foreground">
                                                 {device.platform && <span className="mr-1.5">{device.platform}</span>}
                                                 Last seen {new Date(device.lastSeen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                            </p>
+                                            <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                                                {device.deviceId ?? device.$id}
                                             </p>
                                         </div>
                                     </div>

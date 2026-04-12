@@ -110,6 +110,20 @@ function DashboardContent() {
     const [copied, setCopied] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [redirectingToLogin, setRedirectingToLogin] = useState(false);
+
+    const refreshDeviceCount = async (licenseId: string) => {
+        if (!ACTIVATIONS_COLLECTION_ID) return;
+
+        try {
+            const devRes = await databases.listDocuments(DB_ID, ACTIVATIONS_COLLECTION_ID, [
+                Query.equal("licenseId", licenseId),
+            ]);
+            setDeviceCount(devRes.total);
+        } catch {
+            // Activations collection may not be set up yet
+        }
+    };
+
     useEffect(() => {
         const init = async () => {
             try {
@@ -135,14 +149,7 @@ function DashboardContent() {
                 if (licRes.documents.length > 0) {
                     const lic = licRes.documents[0];
                     setLicense(lic);
-                    if (ACTIVATIONS_COLLECTION_ID) {
-                        try {
-                            const devRes = await databases.listDocuments(DB_ID, ACTIVATIONS_COLLECTION_ID, [
-                                Query.equal("licenseId", lic.$id),
-                            ]);
-                            setDeviceCount(devRes.total);
-                        } catch { /* activations collection may not be set up yet */ }
-                    }
+                    await refreshDeviceCount(lic.$id);
                 }
             } catch (err: unknown) {
                 if (isTokenError(err)) {
@@ -161,6 +168,38 @@ function DashboardContent() {
         };
         init();
     }, [router, searchParams]);
+
+    useEffect(() => {
+        if (!license?.$id || !ACTIVATIONS_COLLECTION_ID) {
+            return;
+        }
+
+        const syncDeviceCount = () => {
+            void refreshDeviceCount(license.$id);
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                syncDeviceCount();
+            }
+        };
+
+        const intervalId = window.setInterval(() => {
+            if (document.visibilityState === "visible") {
+                syncDeviceCount();
+            }
+        }, 20000);
+
+        window.addEventListener("focus", syncDeviceCount);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            window.clearInterval(intervalId);
+            window.removeEventListener("focus", syncDeviceCount);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [license?.$id]);
+
     const handleCopy = () => {
         if (!license) return;
         navigator.clipboard.writeText(license.licenseKey);
