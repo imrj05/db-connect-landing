@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { account, databases, DB_ID, LICENSES_COLLECTION_ID, DEVICES_COLLECTION_ID } from "@/lib/appwrite";
+import { account, databases, DB_ID, LICENSES_COLLECTION_ID, ACTIVATIONS_COLLECTION_ID } from "@/lib/appwrite";
 import { ID, Query, Permission, Role } from "appwrite";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { useRouter } from "next/navigation";
@@ -39,9 +39,11 @@ type License = Models.Document & {
 
 type Device = Models.Document & {
     licenseId: string;
-    userId: string;
+    userId?: string;
+    deviceId?: string;
     deviceName: string;
-    platform: string;
+    platform?: string;
+    activatedAt?: string;
     lastSeen: string;
 };
 
@@ -167,15 +169,15 @@ export default function BillingPage() {
     }, [router]);
 
     const fetchDevices = async (licenseId: string) => {
-        if (!DEVICES_COLLECTION_ID) return;
+        if (!ACTIVATIONS_COLLECTION_ID) return;
         try {
-            const res = await databases.listDocuments<Device>(DB_ID, DEVICES_COLLECTION_ID, [
+            const res = await databases.listDocuments<Device>(DB_ID, ACTIVATIONS_COLLECTION_ID, [
                 Query.equal("licenseId", licenseId),
                 Query.orderDesc("lastSeen"),
             ]);
             setDevices(res.documents);
         } catch {
-            // Devices collection may not be configured yet
+            // Activations collection may not be configured yet
         }
     };
 
@@ -311,10 +313,10 @@ export default function BillingPage() {
     };
 
     const handleRemoveDevice = async (deviceId: string) => {
-        if (!DEVICES_COLLECTION_ID) return;
+        if (!ACTIVATIONS_COLLECTION_ID) return;
         setRemovingDevice(deviceId);
         try {
-            await databases.deleteDocument(DB_ID, DEVICES_COLLECTION_ID, deviceId);
+            await databases.deleteDocument(DB_ID, ACTIVATIONS_COLLECTION_ID, deviceId);
             setDevices((prev) => prev.filter((d) => d.$id !== deviceId));
             toast.success("Device removed.");
         } catch (err: unknown) {

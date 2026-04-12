@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { account, databases, DB_ID, LICENSES_COLLECTION_ID, DEVICES_COLLECTION_ID } from "@/lib/appwrite";
+import { account, databases, DB_ID, LICENSES_COLLECTION_ID, ACTIVATIONS_COLLECTION_ID } from "@/lib/appwrite";
 import { Query } from "appwrite";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -135,13 +135,13 @@ function DashboardContent() {
                 if (licRes.documents.length > 0) {
                     const lic = licRes.documents[0];
                     setLicense(lic);
-                    if (DEVICES_COLLECTION_ID) {
+                    if (ACTIVATIONS_COLLECTION_ID) {
                         try {
-                            const devRes = await databases.listDocuments(DB_ID, DEVICES_COLLECTION_ID, [
+                            const devRes = await databases.listDocuments(DB_ID, ACTIVATIONS_COLLECTION_ID, [
                                 Query.equal("licenseId", lic.$id),
                             ]);
                             setDeviceCount(devRes.total);
-                        } catch { /* devices collection may not be set up yet */ }
+                        } catch { /* activations collection may not be set up yet */ }
                     }
                 }
             } catch (err: unknown) {

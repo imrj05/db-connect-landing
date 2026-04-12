@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
       return withCors(request, Response.json({ error: "No activation slots remaining" }, { status: 409 }), ACTIVATE_METHODS);
     }
 
+    const validatedAt = new Date().toISOString();
+
     const result = await upsertActivation({
       license: licenseDocument,
       deviceId,
@@ -119,6 +121,18 @@ export async function POST(request: NextRequest) {
       Response.json({
         status: "activated",
         remaining_slots: Math.max(0, verification.normalizedLicense.maxDevices - activationCount),
+        license: {
+          license_key: verification.normalizedLicense.licenseKey,
+          email: verification.normalizedLicense.email,
+          plan: verification.normalizedLicense.plan,
+          expiry: verification.normalizedLicense.expiry,
+          max_devices: verification.normalizedLicense.maxDevices,
+          issued_at: verification.normalizedLicense.issuedAt,
+          signature: verification.normalizedLicense.signature,
+        },
+        device_id: deviceId,
+        activated: true,
+        last_validated_at: validatedAt,
       }),
       ACTIVATE_METHODS,
     );
