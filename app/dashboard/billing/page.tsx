@@ -108,7 +108,7 @@ function loadRazorpayScript(): Promise<boolean> {
     });
 }
 
-function PlatformIcon({ platform }: { platform: string }) {
+function PlatformIcon({ platform }: { platform?: string }) {
     const p = platform?.toLowerCase() ?? "";
     if (p.includes("mac") || p.includes("darwin")) return <RiAppleLine size={15} />;
     if (p.includes("win")) return <RiWindowsLine size={15} />;
