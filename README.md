@@ -27,6 +27,7 @@ Environment variables used by the license layer:
 LICENSE_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 LICENSE_PUBLIC_KEY_ALGORITHM="RSASSA-PKCS1-v1_5"
 NEXT_PUBLIC_APPWRITE_ACTIVATIONS_COLLECTION_ID="activations"
+LICENSE_API_ALLOWED_ORIGINS="https://db-connect.rajeshwarkashyap.in,http://localhost:1420"
 ```
 Shared verification utility:
 ```ts

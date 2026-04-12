@@ -1,9 +1,12 @@
 import type { NextRequest } from "next/server";
 
+import { createCorsPreflightResponse, withCors } from "@/lib/api/cors";
 import { findLicenseByKey, listActivationsByLicenseId, mapLicenseDocumentToLicense, upsertActivation } from "@/lib/license/server";
 import { verifyLicense } from "@/lib/license/verify";
 import { takeRateLimit } from "@/lib/server-rate-limit";
 import { getErrorMessage } from "@/lib/utils";
+
+const ACTIVATE_METHODS = ["POST", "OPTIONS"];
 
 const ACTIVATE_RATE_LIMIT = {
   limit: 10,
@@ -34,6 +37,10 @@ function normalizeDeviceName(value: unknown): string {
   return normalized.length > 0 ? normalized.slice(0, 120) : "Unknown device";
 }
 
+export function OPTIONS(request: NextRequest) {
+  return createCorsPreflightResponse(request, ACTIVATE_METHODS);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as {
@@ -46,35 +53,43 @@ export async function POST(request: NextRequest) {
     const deviceName = normalizeDeviceName(body.device_name);
 
     if (!isValidLicenseKey(licenseKey) || !isValidDeviceId(deviceId)) {
-      return Response.json({ error: "Invalid activation payload" }, { status: 400 });
+      return withCors(request, Response.json({ error: "Invalid activation payload" }, { status: 400 }), ACTIVATE_METHODS);
     }
 
     const rateLimit = takeRateLimit("license-activate", getRequestKey(request, licenseKey), ACTIVATE_RATE_LIMIT);
 
     if (rateLimit.limited) {
-      return Response.json(
-        { error: "Too many activation attempts. Try again later." },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(rateLimit.retryAfterSeconds),
+      return withCors(
+        request,
+        Response.json(
+          { error: "Too many activation attempts. Try again later." },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(rateLimit.retryAfterSeconds),
+            },
           },
-        },
+        ),
+        ACTIVATE_METHODS,
       );
     }
 
     const licenseDocument = await findLicenseByKey(licenseKey);
 
     if (!licenseDocument) {
-      return Response.json({ error: "License not found" }, { status: 404 });
+      return withCors(request, Response.json({ error: "License not found" }, { status: 404 }), ACTIVATE_METHODS);
     }
 
     const verification = await verifyLicense(mapLicenseDocumentToLicense(licenseDocument));
 
     if (!verification.valid || !verification.normalizedLicense) {
-      return Response.json(
-        { error: verification.reason === "revoked" ? "License revoked" : "License is not valid" },
-        { status: verification.reason === "revoked" ? 403 : 400 },
+      return withCors(
+        request,
+        Response.json(
+          { error: verification.reason === "revoked" ? "License revoked" : "License is not valid" },
+          { status: verification.reason === "revoked" ? 403 : 400 },
+        ),
+        ACTIVATE_METHODS,
       );
     }
 
@@ -82,7 +97,7 @@ export async function POST(request: NextRequest) {
     const existingActivation = activations.find((activation) => activation.deviceId === deviceId);
 
     if (!existingActivation && activations.length >= verification.normalizedLicense.maxDevices) {
-      return Response.json({ error: "No activation slots remaining" }, { status: 409 });
+      return withCors(request, Response.json({ error: "No activation slots remaining" }, { status: 409 }), ACTIVATE_METHODS);
     }
 
     const result = await upsertActivation({
@@ -99,11 +114,19 @@ export async function POST(request: NextRequest) {
       licenseKey,
     });
 
-    return Response.json({
-      status: "activated",
-      remaining_slots: Math.max(0, verification.normalizedLicense.maxDevices - activationCount),
-    });
+    return withCors(
+      request,
+      Response.json({
+        status: "activated",
+        remaining_slots: Math.max(0, verification.normalizedLicense.maxDevices - activationCount),
+      }),
+      ACTIVATE_METHODS,
+    );
   } catch (error: unknown) {
-    return Response.json({ error: getErrorMessage(error, "Failed to activate license") }, { status: 500 });
+    return withCors(
+      request,
+      Response.json({ error: getErrorMessage(error, "Failed to activate license") }, { status: 500 }),
+      ACTIVATE_METHODS,
+    );
   }
 }
