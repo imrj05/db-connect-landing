@@ -10,6 +10,8 @@ npm install
 npm run dev
 ```
 Open `http://localhost:3000`.
+
+Production startup now runs checked-in SQL migrations automatically before the app starts. It also runs the seed script once when the database is still empty. Set `AUTO_DB_MIGRATE="false"` or `AUTO_DB_SEED="false"` if you need to skip either behavior for a specific environment.
 ## Environment
 Set these variables before running auth, migrations, or checkout flows:
 ```bash
@@ -72,6 +74,8 @@ npm run db:generate
 ```bash
 npm run db:migrate
 ```
+
+For container and production starts, `npm start` now waits for the database, applies any unapplied checked-in migrations from `drizzle/*.sql`, runs the seed script when the database has no users/profiles/licenses yet, and then launches Next.js.
 4. Bootstrap the local database with one command:
 ```bash
 npm run db:setup
