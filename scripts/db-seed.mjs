@@ -1,6 +1,46 @@
 import { randomBytes, scrypt } from "node:crypto";
 import { Client } from "pg";
 
+const defaultPlans = [
+    {
+        slug: "starter",
+        name: "Starter",
+        description: "For individual developers getting started with DBConnect.",
+        price: 0,
+        pricePaise: 0,
+        maxDevices: 1,
+        durationDays: 0,
+        isPopular: false,
+        isActive: true,
+        sortOrder: 10,
+        features: [
+            "1 device",
+            "Core database features",
+            "SQLite, PostgreSQL, MySQL",
+            "Community support",
+        ],
+    },
+    {
+        slug: "pro",
+        name: "Pro",
+        description: "For power users who need more devices and faster support.",
+        price: 299,
+        pricePaise: 29900,
+        maxDevices: 3,
+        durationDays: 30,
+        isPopular: true,
+        isActive: true,
+        sortOrder: 20,
+        features: [
+            "3 devices",
+            "Everything in Starter",
+            "Query history & saved queries",
+            "Export CSV / JSON",
+            "Priority support",
+        ],
+    },
+];
+
 const databaseUrl =
     process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/db_connect";
 
@@ -127,6 +167,59 @@ async function ensureDemoUser(client) {
     return userId;
 }
 
+async function ensurePlans(client) {
+    const now = new Date();
+
+    for (const plan of defaultPlans) {
+        await client.query(
+            `insert into "application_plans" (
+                slug,
+                name,
+                description,
+                price,
+                price_paise,
+                max_devices,
+                duration_days,
+                is_popular,
+                is_active,
+                sort_order,
+                features,
+                created_at,
+                updated_at
+            ) values (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[], $12, $13
+            )
+            on conflict (slug) do update set
+                name = excluded.name,
+                description = excluded.description,
+                price = excluded.price,
+                price_paise = excluded.price_paise,
+                max_devices = excluded.max_devices,
+                duration_days = excluded.duration_days,
+                is_popular = excluded.is_popular,
+                is_active = excluded.is_active,
+                sort_order = excluded.sort_order,
+                features = excluded.features,
+                updated_at = excluded.updated_at`,
+            [
+                plan.slug,
+                plan.name,
+                plan.description,
+                plan.price,
+                plan.pricePaise,
+                plan.maxDevices,
+                plan.durationDays,
+                plan.isPopular,
+                plan.isActive,
+                plan.sortOrder,
+                plan.features,
+                now,
+                now,
+            ],
+        );
+    }
+}
+
 async function ensureDemoLicense(client, userId) {
     const now = new Date();
     const licenseResult = await client.query(
@@ -207,6 +300,7 @@ try {
     await client.query("begin");
     transactionOpen = true;
 
+    await ensurePlans(client);
     const userId = await ensureDemoUser(client);
     const licenseKey = await ensureDemoLicense(client, userId);
 

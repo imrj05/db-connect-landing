@@ -1,4 +1,5 @@
-import { index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 const timestampColumns = {
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull(),
@@ -41,6 +42,30 @@ export const licenses = pgTable(
     ],
 );
 
+export const applicationPlans = pgTable(
+    "application_plans",
+    {
+        id: uuid("id").defaultRandom().primaryKey(),
+        slug: text("slug").notNull(),
+        name: text("name").notNull(),
+        description: text("description"),
+        price: integer("price").notNull().default(0),
+        pricePaise: integer("price_paise").notNull().default(0),
+        maxDevices: integer("max_devices").notNull().default(1),
+        durationDays: integer("duration_days").notNull().default(0),
+        isPopular: boolean("is_popular").notNull().default(false),
+        isActive: boolean("is_active").notNull().default(true),
+        sortOrder: integer("sort_order").notNull().default(0),
+        features: text("features").array().notNull().default(sql`'{}'::text[]`),
+        ...timestampColumns,
+    },
+    (table) => [
+        uniqueIndex("application_plans_slug_idx").on(table.slug),
+        index("application_plans_active_idx").on(table.isActive),
+        index("application_plans_sort_idx").on(table.sortOrder),
+    ],
+);
+
 export const activations = pgTable(
     "activations",
     {
@@ -61,3 +86,4 @@ export const activations = pgTable(
 export type ProfileRow = typeof profiles.$inferSelect;
 export type LicenseRow = typeof licenses.$inferSelect;
 export type ActivationRow = typeof activations.$inferSelect;
+export type ApplicationPlanRow = typeof applicationPlans.$inferSelect;

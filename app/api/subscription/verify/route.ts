@@ -11,7 +11,7 @@ import {
 } from "@/lib/account-server";
 import { auth } from "@/lib/auth";
 import { buildSignedLicenseData } from "@/lib/license/sign";
-import { PLANS } from "@/lib/plans";
+import { findPlanById } from "@/lib/plan-server";
 import { getErrorMessage } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
             return Response.json({ error: "Payment verification failed — invalid signature" }, { status: 400 });
         }
 
-        const plan = PLANS.find((entry) => entry.id === planId);
-        if (!plan) {
+        const plan = planId ? await findPlanById(planId) : null;
+        if (!plan || !plan.isActive) {
             return Response.json({ error: "Invalid plan" }, { status: 400 });
         }
 

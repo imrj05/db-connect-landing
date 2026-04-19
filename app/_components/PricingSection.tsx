@@ -2,17 +2,13 @@ import { RiCheckboxCircleFill, RiDownloadCloudFill, RiRocketFill } from "react-i
 import { SparkleIcon } from "./FeatureIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PLANS as FALLBACK_PLANS } from "@/lib/plans";
+import { listActiveApplicationPlans } from "@/lib/plan-server";
+import type { ApplicationPlan } from "@/lib/plans";
 
-type PricingPlan = {
-    durationDays: number;
-    isPopular: boolean;
-    maxDevices: number;
-    name: string;
-    planId: string;
-    price: number;
-    priceLabel: string;
-};
+type PricingPlan = Pick<
+    ApplicationPlan,
+    "durationDays" | "id" | "isPopular" | "maxDevices" | "name" | "price" | "priceLabel"
+>;
 
 function formatPlanTerm(durationDays: number) {
     if (durationDays === 0) return "Lifetime access";
@@ -31,14 +27,14 @@ function getPlanHighlights(plan: { price: number; maxDevices: number; durationDa
 }
 
 export default async function PricingSection() {
-    const pricingPlans: PricingPlan[] = FALLBACK_PLANS.map((plan) => ({
-        planId: plan.id,
+    const pricingPlans: PricingPlan[] = (await listActiveApplicationPlans()).map((plan) => ({
+        id: plan.id,
         name: plan.name,
         priceLabel: plan.priceLabel,
         price: plan.price,
         maxDevices: plan.maxDevices,
         durationDays: plan.durationDays,
-        isPopular: plan.popular,
+        isPopular: plan.isPopular,
     }));
 
     return (
@@ -65,7 +61,7 @@ export default async function PricingSection() {
 
                         return (
                             <div
-                                key={plan.planId}
+                                key={plan.id}
                                 className={plan.isPopular
                                     ? "group relative rounded-2xl border border-brand/20 bg-card p-6 md:p-7"
                                     : "group relative rounded-2xl border border-border bg-card p-6 md:p-7"

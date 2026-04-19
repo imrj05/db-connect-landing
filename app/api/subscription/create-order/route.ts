@@ -4,7 +4,7 @@ import Razorpay from "razorpay";
 
 import { ensureProfileForUser } from "@/lib/account-server";
 import { auth } from "@/lib/auth";
-import { PLANS } from "@/lib/plans";
+import { findPlanById } from "@/lib/plan-server";
 
 const razorpay = new Razorpay({
     key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
 
         const { planId } = (await req.json()) as { planId?: string };
 
-        const plan = PLANS.find((entry) => entry.id === planId);
-        if (!plan) {
+        const plan = planId ? await findPlanById(planId) : null;
+        if (!plan || !plan.isActive) {
             return Response.json({ error: "Invalid plan" }, { status: 400 });
         }
         if (plan.price === 0) {

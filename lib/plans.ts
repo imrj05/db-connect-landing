@@ -1,13 +1,46 @@
-export const PLANS = [
+export type PlanSeed = {
+  description: string | null;
+  durationDays: number;
+  features: string[];
+  id: string;
+  isActive: boolean;
+  isPopular: boolean;
+  maxDevices: number;
+  name: string;
+  price: number;
+  pricePaise: number;
+  sortOrder: number;
+};
+
+export type ApplicationPlan = {
+  description: string | null;
+  durationDays: number;
+  features: string[];
+  id: string;
+  isActive: boolean;
+  isPopular: boolean;
+  maxDevices: number;
+  name: string;
+  price: number;
+  priceLabel: string;
+  pricePaise: number;
+  sortOrder: number;
+};
+
+export type PlanId = string;
+
+export const DEFAULT_PLAN_SEEDS: readonly PlanSeed[] = [
   {
     id: "starter",
     name: "Starter",
-    priceLabel: "Free",
+    description: "For individual developers getting started with DBConnect.",
     price: 0,
-    pricePaise: 0,           // Razorpay amount in paise (₹0)
+    pricePaise: 0,
     maxDevices: 1,
-    durationDays: 0,          // 0 = lifetime
-    popular: false,
+    durationDays: 0,
+    isPopular: false,
+    isActive: true,
+    sortOrder: 10,
     features: [
       "1 device",
       "Core database features",
@@ -18,12 +51,14 @@ export const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    priceLabel: "₹299/mo",
+    description: "For power users who need more devices and faster support.",
     price: 299,
-    pricePaise: 29900,        // ₹299 in paise
+    pricePaise: 29900,
     maxDevices: 3,
     durationDays: 30,
-    popular: true,
+    isPopular: true,
+    isActive: true,
+    sortOrder: 20,
     features: [
       "3 devices",
       "Everything in Starter",
@@ -33,5 +68,31 @@ export const PLANS = [
     ],
   },
 ] as const;
-export type Plan = (typeof PLANS)[number];
-export type PlanId = Plan["id"];
+
+export function formatPlanPriceLabel(plan: {
+  durationDays: number;
+  price: number;
+}) {
+  if (plan.price === 0) {
+    return "Free";
+  }
+
+  if (plan.durationDays === 30) {
+    return `₹${plan.price}/mo`;
+  }
+
+  if (plan.durationDays === 365) {
+    return `₹${plan.price}/yr`;
+  }
+
+  return `₹${plan.price}`;
+}
+
+export function toApplicationPlan(plan: PlanSeed): ApplicationPlan {
+  return {
+    ...plan,
+    priceLabel: formatPlanPriceLabel(plan),
+  };
+}
+
+export const DEFAULT_PLANS: readonly ApplicationPlan[] = DEFAULT_PLAN_SEEDS.map(toApplicationPlan);

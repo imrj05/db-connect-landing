@@ -2,7 +2,7 @@
 
 import React, { useEffect, useEffectEvent, useState } from "react";
 import { useAppAnalytics } from "@/app/_components/AppAnalyticsProvider";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { formatPlanPriceLabel, type ApplicationPlan, type PlanId } from "@/lib/plans";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -55,6 +55,7 @@ type Activation = {
 type BillingResponse = {
     devices: Activation[];
     license: License | null;
+    plans: ApplicationPlan[];
     user: Profile;
 };
 
@@ -132,6 +133,7 @@ export default function BillingPage() {
     const [user, setUser] = useState<Profile | null>(null);
     const [license, setLicense] = useState<License | null>(null);
     const [devices, setDevices] = useState<Activation[]>([]);
+    const [plans, setPlans] = useState<ApplicationPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState<PlanId | null>(null);
     const [removingDevice, setRemovingDevice] = useState<string | null>(null);
@@ -157,6 +159,7 @@ export default function BillingPage() {
             setUser(data.user);
             setLicense(data.license);
             setDevices(data.devices);
+            setPlans(data.plans);
         } catch (error) {
             toast.error(getErrorMessage(error, "Failed to load billing details."));
         }
@@ -220,8 +223,10 @@ export default function BillingPage() {
     };
 
     const handleRazorpayCheckout = async (planId: PlanId) => {
-        const plan = PLANS.find((p) => p.id === planId)!;
-        if (!user) return;
+        const plan = plans.find((entry) => entry.id === planId);
+        if (!plan || !user) {
+            return;
+        }
         setPurchasing(planId);
         trackEvent("billing_checkout_started", {
             plan: plan.id,
@@ -391,15 +396,15 @@ export default function BillingPage() {
                 </section>
 
                 <div className="grid gap-4 xl:grid-cols-3">
-                    {PLANS.map((plan) => {
+                    {plans.map((plan) => {
                         const isCurrent = showPlans && license?.plan_id === plan.id;
                         const isBuying = purchasing === plan.id;
                         return (
                             <div
                                 key={plan.id}
-                                className={plan.popular ? "dashboard-section relative flex flex-col rounded-3xl border-brand/25 p-6" : "dashboard-section relative flex flex-col rounded-3xl p-6"}
+                                className={plan.isPopular ? "dashboard-section relative flex flex-col rounded-3xl border-brand/25 p-6" : "dashboard-section relative flex flex-col rounded-3xl p-6"}
                             >
-                                {plan.popular && (
+                                {plan.isPopular && (
                                     <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-semibold text-brand-foreground">
                                         Most popular
                                     </span>
@@ -424,7 +429,7 @@ export default function BillingPage() {
                                 </ul>
 
                                 <button
-                                    className={plan.popular ? "btn-primary w-full" : "btn-secondary w-full"}
+                                    className={plan.isPopular ? "btn-primary w-full" : "btn-secondary w-full"}
                                     disabled={purchasing !== null || isCurrent}
                                     onClick={() => handleBuyPlan(plan.id)}
                                 >
@@ -456,7 +461,7 @@ export default function BillingPage() {
 
     const lifetime = isLifetime(license.expires_at || "");
     const days = lifetime ? Infinity : daysRemaining(license.expires_at || "");
-    const currentPlan = PLANS.find((p) => p.id === license.plan_id);
+    const currentPlan = plans.find((plan) => plan.id === license.plan_id);
     const isExpired = license.status === "expired" || (!lifetime && days === 0);
     const devicesFull = devices.length >= license.max_devices;
 
@@ -501,7 +506,10 @@ export default function BillingPage() {
                             </span>
                         </div>
                         <span className="text-lg font-extrabold tracking-tight text-foreground">
-                            {currentPlan?.priceLabel}
+                            {currentPlan?.priceLabel ?? formatPlanPriceLabel({
+                                price: license.price,
+                                durationDays: lifetime ? 0 : 30,
+                            })}
                         </span>
                     </div>
 

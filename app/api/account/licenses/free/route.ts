@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { createLicenseForUser, ensureProfileForUser, generateLicenseKey, getExpiryDate, normalizeLicenseDocument } from "@/lib/account-server";
 import { auth } from "@/lib/auth";
 import { buildSignedLicenseData } from "@/lib/license/sign";
-import { PLANS } from "@/lib/plans";
+import { findPlanById } from "@/lib/plan-server";
 
 export async function POST() {
     const session = await auth.api.getSession({
@@ -14,8 +14,8 @@ export async function POST() {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const plan = PLANS.find((entry) => entry.id === "starter");
-    if (!plan) {
+    const plan = await findPlanById("starter");
+    if (!plan || !plan.isActive) {
         return Response.json({ error: "Starter plan is unavailable" }, { status: 500 });
     }
 

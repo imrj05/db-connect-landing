@@ -2,7 +2,8 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { activations, licenses, profiles, type ActivationRow, type LicenseRow, type ProfileRow } from "@/lib/db/schema";
-import type { Plan } from "@/lib/plans";
+import { listActiveApplicationPlans } from "@/lib/plan-server";
+import type { ApplicationPlan } from "@/lib/plans";
 
 type SessionUser = {
     createdAt?: Date | string | null;
@@ -164,6 +165,7 @@ export async function getOverviewData(user: SessionUser) {
 export async function getBillingData(user: SessionUser) {
     const profile = await ensureProfileForUser(user);
     const license = await getLatestActiveLicense(user.id);
+    const plans = await listActiveApplicationPlans();
 
     const deviceRows = license
         ? await db
@@ -177,6 +179,7 @@ export async function getBillingData(user: SessionUser) {
         user: toPublicProfile(profile, user),
         license: toPublicLicense(license),
         devices: deviceRows.map(toPublicActivation),
+        plans,
     };
 }
 
@@ -211,7 +214,7 @@ export async function createLicenseForUser(params: {
     licenseKey?: string;
     maxDevices: number;
     paymentReference?: string;
-    plan: Plan;
+    plan: ApplicationPlan;
     signature: string;
     userId: string;
 }) {

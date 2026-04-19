@@ -9,7 +9,7 @@ import type { NextRequest } from "next/server";
 
 import { createLicenseForUser, findProfileByUserId, generateLicenseKey, getExpiryDate } from "@/lib/account-server";
 import { buildSignedLicenseData } from "@/lib/license/sign";
-import { PLANS } from "@/lib/plans";
+import { findPlanById } from "@/lib/plan-server";
 import { getErrorMessage } from "@/lib/utils";
 
 interface RazorpayPaymentEntity {
@@ -72,8 +72,8 @@ export async function POST(req: NextRequest) {
         return Response.json({ error: "Missing userId or planId in payment notes" }, { status: 400 });
     }
 
-    const plan = PLANS.find((entry) => entry.id === planId);
-    if (!plan) {
+    const plan = await findPlanById(planId);
+    if (!plan || !plan.isActive) {
         console.error("[webhook] Unknown planId:", planId);
         return Response.json({ error: `Unknown planId: ${planId}` }, { status: 400 });
     }

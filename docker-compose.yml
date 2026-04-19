@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     env_file:
       - .env
     environment:
@@ -13,7 +13,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
   db:
     image: postgres:16-alpine
     ports:
@@ -29,6 +28,5 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
 volumes:
   postgres_data:
