@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { account, databases, DB_ID, LICENSES_COLLECTION_ID, ACTIVATIONS_COLLECTION_ID } from "@/lib/appwrite";
-import { ID, Query, Permission, Role } from "appwrite";
+import React, { useEffect, useEffectEvent, useState } from "react";
+import { useAppAnalytics } from "@/app/_components/AppAnalyticsProvider";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -21,30 +20,42 @@ import {
     RiTerminalLine,
     RiBankCardLine,
 } from "react-icons/ri";
-import type { Models } from "appwrite";
 import { getErrorMessage } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type License = Models.Document & {
-    userId: string;
-    planId: PlanId;
-    planName: string;
-    licenseKey: string;
-    status: "active" | "expired";
-    expiresAt: string;
-    maxDevices: number;
-    price: number;
+type Profile = {
+    id: string;
+    name: string | null;
+    email: string | null;
+    created_at: string;
 };
 
-type Device = Models.Document & {
-    licenseId: string;
-    userId?: string;
-    deviceId?: string;
-    deviceName: string;
-    platform?: string;
-    activatedAt?: string;
-    lastSeen: string;
+type License = {
+    id: string;
+    user_id: string;
+    license_key: string;
+    plan_id: string | null;
+    plan_name: string | null;
+    status: string;
+    expires_at: string | null;
+    max_devices: number;
+    price: number;
+    created_at: string;
+};
+
+type Activation = {
+    id: string;
+    license_id: string;
+    device_id: string;
+    device_name: string | null;
+    activated_at: string;
+    last_seen: string;
+    platform: string | null;
+};
+
+type BillingResponse = {
+    devices: Activation[];
+    license: License | null;
+    user: Profile;
 };
 
 type RazorpayOrderResponse = {
@@ -76,15 +87,6 @@ type RazorpayConstructor = new (options: {
     theme: { color: string };
 }) => { open: () => void };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function generateLicenseKey(): string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    const seg = () =>
-        Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-    return `DBK-${seg()}-${seg()}-${seg()}-${seg()}`;
-}
-
 function isLifetime(expiresAt: string): boolean {
     return (
         expiresAt === "lifetime" ||
@@ -108,7 +110,7 @@ function loadRazorpayScript(): Promise<boolean> {
     });
 }
 
-function PlatformIcon({ platform }: { platform?: string }) {
+function PlatformIcon({ platform }: { platform?: string | null }) {
     const p = platform?.toLowerCase() ?? "";
     if (p.includes("mac") || p.includes("darwin")) return <RiAppleLine size={15} />;
     if (p.includes("win")) return <RiWindowsLine size={15} />;
@@ -124,70 +126,57 @@ function LoadingState() {
     );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
 export default function BillingPage() {
     const router = useRouter();
-    const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+    const { trackEvent } = useAppAnalytics();
+    const [user, setUser] = useState<Profile | null>(null);
     const [license, setLicense] = useState<License | null>(null);
-    const [devices, setDevices] = useState<Device[]>([]);
+    const [devices, setDevices] = useState<Activation[]>([]);
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState<PlanId | null>(null);
     const [removingDevice, setRemovingDevice] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [showPlans, setShowPlans] = useState(false);
 
+    const loadBilling = useEffectEvent(async () => {
+        try {
+            const response = await fetch("/api/account/billing", {
+                cache: "no-store",
+            });
+
+            if (response.status === 401) {
+                router.replace("/login");
+                return;
+            }
+
+            const data = (await response.json()) as BillingResponse & { error?: string };
+            if (!response.ok) {
+                throw new Error(data.error ?? "Failed to load billing.");
+            }
+
+            setUser(data.user);
+            setLicense(data.license);
+            setDevices(data.devices);
+        } catch (error) {
+            toast.error(getErrorMessage(error, "Failed to load billing details."));
+        }
+    });
+
     useEffect(() => {
         const init = async () => {
-            try {
-                const me = await account.get();
-                setUser(me);
-                const res = await databases.listDocuments<License>(DB_ID, LICENSES_COLLECTION_ID, [
-                    Query.equal("userId", me.$id),
-                    Query.equal("status", "active"),
-                    Query.orderDesc("$createdAt"),
-                    Query.limit(1),
-                ]);
-                if (res.documents.length > 0) {
-                    const lic = res.documents[0];
-                    setLicense(lic);
-                    await fetchDevices(lic.$id);
-                }
-            } catch (err: unknown) {
-                const e = err as { code?: number; message?: string };
-                const isAuthError =
-                    e.code === 401 ||
-                    typeof e.message === "string" && (e.message.includes("token") || e.message.includes("expired"));
-                if (isAuthError) {
-                    router.replace("/login");
-                }
-            } finally {
-                setLoading(false);
-            }
+            await loadBilling();
+            setLoading(false);
         };
-        init();
-    }, [router]);
-
-    const fetchDevices = async (licenseId: string) => {
-        if (!ACTIVATIONS_COLLECTION_ID) return;
-        try {
-            const res = await databases.listDocuments<Device>(DB_ID, ACTIVATIONS_COLLECTION_ID, [
-                Query.equal("licenseId", licenseId),
-                Query.orderDesc("lastSeen"),
-            ]);
-            setDevices(res.documents);
-        } catch {
-            // Activations collection may not be configured yet
-        }
-    };
+        void init();
+    }, []);
 
     useEffect(() => {
-        if (!license?.$id || !ACTIVATIONS_COLLECTION_ID) {
+        if (!license?.id) {
             return;
         }
 
         const syncDevices = () => {
-            void fetchDevices(license.$id);
+            void loadBilling();
         };
 
         const handleVisibilityChange = () => {
@@ -210,56 +199,47 @@ export default function BillingPage() {
             window.removeEventListener("focus", syncDevices);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [license?.$id]);
+    }, [license?.id]);
 
-    // Free plan — create license directly via client SDK
     const createFreeLicense = async () => {
-        const plan = PLANS.find((p) => p.id === "starter")!;
-        if (!user) return;
-        if (license) {
-            await databases.updateDocument(DB_ID, LICENSES_COLLECTION_ID, license.$id, { status: "expired" });
+        const response = await fetch("/api/account/licenses/free", {
+            method: "POST",
+        });
+        const data = (await response.json()) as { error?: string; license?: License };
+        if (!response.ok || !data.license) {
+            throw new Error(data.error ?? "Failed to activate the starter plan.");
         }
-        const doc = await databases.createDocument<License>(
-            DB_ID, LICENSES_COLLECTION_ID, ID.unique(),
-            {
-                userId: user.$id,
-                planId: plan.id,
-                planName: plan.name,
-                licenseKey: generateLicenseKey(),
-                status: "active",
-                expiresAt: "lifetime",
-                maxDevices: plan.maxDevices,
-                price: 0,
-            },
-            [Permission.read(Role.user(user.$id)), Permission.update(Role.user(user.$id))]
-        );
-        setLicense(doc);
+
+        setLicense(data.license);
         setDevices([]);
         setShowPlans(false);
+        trackEvent("license_starter_activated", {
+            plan: "starter",
+        });
         toast.success("Starter plan activated!");
     };
 
-    // Paid plan — Razorpay checkout → server verify → admin creates license
     const handleRazorpayCheckout = async (planId: PlanId) => {
         const plan = PLANS.find((p) => p.id === planId)!;
         if (!user) return;
         setPurchasing(planId);
+        trackEvent("billing_checkout_started", {
+            plan: plan.id,
+            price: plan.price,
+        });
 
         try {
-            // 1. Create Razorpay order server-side
             const orderRes = await fetch("/api/subscription/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ planId, userId: user.$id }),
+                body: JSON.stringify({ planId }),
             });
             const orderData = await orderRes.json() as RazorpayOrderResponse;
             if (!orderRes.ok) throw new Error(orderData.error ?? "Failed to create order");
 
-            // 2. Load Razorpay.js
             const loaded = await loadRazorpayScript();
             if (!loaded) throw new Error("Failed to load Razorpay checkout. Check your connection.");
 
-            // 3. Open checkout and await result
             await new Promise<void>((resolve, reject) => {
                 const razorpayWindow = window as Window & { Razorpay?: RazorpayConstructor };
                 const Razorpay = razorpayWindow.Razorpay;
@@ -281,7 +261,6 @@ export default function BillingPage() {
                         razorpay_signature: string;
                     }) => {
                         try {
-                            // 4. Verify on server + create license with admin key
                             const verifyRes = await fetch("/api/subscription/verify", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -290,18 +269,25 @@ export default function BillingPage() {
                                     razorpay_payment_id: response.razorpay_payment_id,
                                     razorpay_signature: response.razorpay_signature,
                                     planId,
-                                    userId: user.$id,
                                 }),
                             });
                             const verifyData = await verifyRes.json() as RazorpayVerifyResponse;
                             if (!verifyRes.ok) throw new Error(verifyData.error ?? "Verification failed");
 
-                            setLicense(verifyData.license as License);
+                            setLicense(verifyData.license);
                             setDevices([]);
                             setShowPlans(false);
+                            trackEvent("billing_checkout_succeeded", {
+                                plan: plan.id,
+                                price: plan.price,
+                            });
                             toast.success(`${plan.name} plan activated!`);
                             resolve();
                         } catch (err: unknown) {
+                            trackEvent("billing_checkout_failed", {
+                                plan: plan.id,
+                                stage: "verification",
+                            });
                             toast.error(getErrorMessage(err, "Payment verified but license creation failed."));
                             reject(err);
                         }
@@ -309,6 +295,9 @@ export default function BillingPage() {
                     modal: {
                         ondismiss: () => {
                             setPurchasing(null);
+                            trackEvent("billing_checkout_cancelled", {
+                                plan: plan.id,
+                            });
                             reject(new Error("cancelled"));
                         },
                     },
@@ -319,6 +308,10 @@ export default function BillingPage() {
             });
         } catch (err: unknown) {
             if (getErrorMessage(err, "") !== "cancelled") {
+                trackEvent("billing_checkout_failed", {
+                    plan: plan.id,
+                    stage: "checkout",
+                });
                 toast.error(getErrorMessage(err, "Payment failed. Please try again."));
             }
         } finally {
@@ -338,32 +331,39 @@ export default function BillingPage() {
 
     const handleCopy = () => {
         if (!license) return;
-        navigator.clipboard.writeText(license.licenseKey);
+        navigator.clipboard.writeText(license.license_key);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleRemoveDevice = async (deviceId: string) => {
-        if (!ACTIVATIONS_COLLECTION_ID) return;
         setRemovingDevice(deviceId);
         try {
-            await databases.deleteDocument(DB_ID, ACTIVATIONS_COLLECTION_ID, deviceId);
-            setDevices((prev) => prev.filter((d) => d.$id !== deviceId));
+            const response = await fetch(`/api/account/activations/${deviceId}`, {
+                method: "DELETE",
+            });
+            const data = (await response.json()) as { error?: string };
+            if (!response.ok) {
+                throw new Error(data.error ?? "Failed to remove device.");
+            }
+            setDevices((prev) => prev.filter((d) => d.id !== deviceId));
+            trackEvent("license_device_removed", {
+                source: "billing_dashboard",
+            });
             toast.success("Device removed.");
         } catch (err: unknown) {
+            trackEvent("license_device_remove_failed", {
+                source: "billing_dashboard",
+            });
             toast.error(getErrorMessage(err, "Failed to remove device."));
         } finally {
             setRemovingDevice(null);
         }
     };
 
-    // ─── Loading ──────────────────────────────────────────────────────────────
-
     if (loading) {
         return <LoadingState />;
     }
-
-    // ─── Plans grid ───────────────────────────────────────────────────────────
 
     if (!license || showPlans) {
         return (
@@ -392,7 +392,7 @@ export default function BillingPage() {
 
                 <div className="grid gap-4 xl:grid-cols-3">
                     {PLANS.map((plan) => {
-                        const isCurrent = showPlans && license?.planId === plan.id;
+                        const isCurrent = showPlans && license?.plan_id === plan.id;
                         const isBuying = purchasing === plan.id;
                         return (
                             <div
@@ -454,13 +454,11 @@ export default function BillingPage() {
         );
     }
 
-    // ─── License view ─────────────────────────────────────────────────────────
-
-    const lifetime = isLifetime(license.expiresAt);
-    const days = lifetime ? Infinity : daysRemaining(license.expiresAt);
-    const currentPlan = PLANS.find((p) => p.id === license.planId);
+    const lifetime = isLifetime(license.expires_at || "");
+    const days = lifetime ? Infinity : daysRemaining(license.expires_at || "");
+    const currentPlan = PLANS.find((p) => p.id === license.plan_id);
     const isExpired = license.status === "expired" || (!lifetime && days === 0);
-    const devicesFull = devices.length >= license.maxDevices;
+    const devicesFull = devices.length >= license.max_devices;
 
     return (
         <div className="space-y-6 p-2 md:p-0">
@@ -476,7 +474,15 @@ export default function BillingPage() {
                             Manage your plan, license key, and registered devices.
                         </p>
                     </div>
-                    <button className="btn-secondary w-fit rounded-full px-3.5 py-2 text-[13px]" onClick={() => setShowPlans(true)}>
+                    <button
+                        className="btn-secondary w-fit rounded-full px-3.5 py-2 text-[13px]"
+                        onClick={() => {
+                            trackEvent("billing_plan_selector_opened", {
+                                current_plan: license.plan_id ?? "unknown",
+                            });
+                            setShowPlans(true);
+                        }}
+                    >
                         Change plan
                     </button>
                 </div>
@@ -488,7 +494,7 @@ export default function BillingPage() {
                         <div className="flex items-center gap-2.5">
                             <RiShieldCheckLine size={18} className="text-muted-foreground" />
                             <span className="text-sm font-semibold text-foreground">
-                                {license.planName} Plan
+                                {license.plan_name} Plan
                             </span>
                             <span className={isExpired ? "status-pill status-pill-neutral" : "status-pill status-pill-active"}>
                                 {isExpired ? "Expired" : "Active"}
@@ -502,7 +508,7 @@ export default function BillingPage() {
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between rounded-xl border border-border bg-elevated px-3.5 py-2.5">
                             <span className="font-mono text-[13px] tracking-[0.05em] text-foreground">
-                                {license.licenseKey}
+                                {license.license_key}
                             </span>
                             <button
                                 onClick={handleCopy}
@@ -522,7 +528,9 @@ export default function BillingPage() {
                                 <span className="detail-value">
                                     {lifetime
                                         ? "Lifetime"
-                                        : new Date(license.expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                                        : license.expires_at
+                                            ? new Date(license.expires_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                                            : "N/A"}
                                 </span>
                                 {!lifetime && !isExpired && (
                                     <span className={days <= 7 ? "status-pill status-pill-danger" : "status-pill status-pill-neutral"}>
@@ -539,10 +547,10 @@ export default function BillingPage() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className={devicesFull ? "detail-value text-rose-600 dark:text-rose-300" : "detail-value"}>
-                                    {devices.length} / {license.maxDevices} used
+                                    {devices.length} / {license.max_devices} used
                                 </span>
                                 <div className="flex gap-0.75">
-                                    {Array.from({ length: license.maxDevices }).map((_, i) => (
+                                    {Array.from({ length: license.max_devices }).map((_, i) => (
                                         <div
                                             key={i}
                                             className={i < devices.length ? "size-2 rounded-full border border-border bg-brand" : "size-2 rounded-full border border-border bg-elevated"}
@@ -577,7 +585,7 @@ export default function BillingPage() {
                         <div className="flex flex-col gap-2">
                             {devices.map((device) => (
                                 <div
-                                    key={device.$id}
+                                    key={device.id}
                                     className="flex items-center justify-between rounded-xl border border-border bg-elevated px-3.5 py-3"
                                 >
                                     <div className="flex items-center gap-2.5">
@@ -585,23 +593,23 @@ export default function BillingPage() {
                                             <PlatformIcon platform={device.platform} />
                                         </div>
                                         <div>
-                                            <p className="text-[13px] font-medium text-foreground">{device.deviceName}</p>
+                                            <p className="text-[13px] font-medium text-foreground">{device.device_name}</p>
                                             <p className="mt-0.5 text-[11px] text-muted-foreground">
                                                 {device.platform && <span className="mr-1.5">{device.platform}</span>}
-                                                Last seen {new Date(device.lastSeen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                                Last seen {new Date(device.last_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                             </p>
                                             <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                                                {device.deviceId ?? device.$id}
+                                                {device.device_id}
                                             </p>
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => handleRemoveDevice(device.$id)}
-                                        disabled={removingDevice === device.$id}
+                                        onClick={() => handleRemoveDevice(device.id)}
+                                        disabled={removingDevice === device.id}
                                         title="Remove device"
                                         className="p-1 text-muted-foreground transition-colors hover:text-rose-600 disabled:pointer-events-none disabled:opacity-50"
                                     >
-                                        {removingDevice === device.$id
+                                        {removingDevice === device.id
                                             ? <RiLoader5Line className="animate-spin" size={15} />
                                             : <RiDeleteBinLine size={15} />}
                                     </button>

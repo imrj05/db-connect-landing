@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { RiArrowLeftLine } from "react-icons/ri";
 
@@ -19,7 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="relative z-10 w-full max-w-sm">
                 <div className="mb-8 flex flex-col items-center gap-3 text-center">
                     <div className="flex size-10 items-center justify-center rounded-2xl bg-elevated ring-1 ring-border/80">
-                        <img src="/icons/logo.svg" alt="DBConnect Logo" width="32" height="32" />
+                        <Image src="/icons/logo.svg" alt="DBConnect Logo" width={32} height={32} />
                     </div>
                     <h1 className="flex items-center gap-1 text-xl font-extrabold tracking-tight text-foreground">
                         DBConnect

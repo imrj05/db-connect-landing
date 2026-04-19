@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const deleted = await deleteActivationByDevice({
-      licenseId: licenseDocument.$id,
+      licenseId: licenseDocument.id,
       deviceId,
     });
 
@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
       return withCors(request, Response.json({ error: "Activation not found" }, { status: 404 }), DEACTIVATE_METHODS);
     }
 
-    const remainingActivations = await listActivationsByLicenseId(licenseDocument.$id);
-    const maxDevices = Number(licenseDocument.maxDevices ?? licenseDocument.max_devices ?? 0);
+    const remainingActivations = await listActivationsByLicenseId(licenseDocument.id);
+    const maxDevices = Number(licenseDocument.max_devices ?? 0);
 
     return withCors(
       request,

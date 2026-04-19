@@ -1,172 +1,174 @@
-import {
-  ACTIVATIONS_COLLECTION_ID,
-  DB_ID,
-  ID,
-  LICENSES_COLLECTION_ID,
-  Permission,
-  Query,
-  Role,
-  serverDatabases,
-} from "@/lib/appwrite-server";
+import { eq } from "drizzle-orm";
+
+import { db } from "@/lib/db";
+import { activations, licenses } from "@/lib/db/schema";
 import type { LicenseLike } from "@/lib/license/types";
 
 export type LicenseDocument = {
-  $id: string;
-  $sequence: number;
-  $collectionId: string;
-  $databaseId: string;
-  $createdAt: string;
-  $updatedAt: string;
-  $permissions: string[];
-  userId?: string;
-  email?: string;
-  plan?: string;
-  planId?: string;
-  planName?: string;
-  expiry?: string;
-  expiresAt?: string;
-  issued_at?: string;
-  issuedAt?: string;
-  license_key?: string;
-  licenseKey?: string;
-  max_devices?: number;
-  maxDevices?: number;
-  signature?: string;
-  is_revoked?: boolean;
-  isRevoked?: boolean;
-  status?: string;
+    id: string;
+    user_id: string;
+    email: string;
+    license_key: string;
+    plan_id: string | null;
+    plan_name: string | null;
+    status: string;
+    expires_at: string | null;
+    max_devices: number;
+    price: number;
+    created_at: string;
+    updated_at: string;
+    signature?: string | null;
 };
 
 export type ActivationDocument = {
-  $id: string;
-  $sequence: number;
-  $collectionId: string;
-  $databaseId: string;
-  $createdAt: string;
-  $updatedAt: string;
-  $permissions: string[];
-  licenseId?: string;
-  licenseKey?: string;
-  deviceId?: string;
-  deviceName?: string;
-  activatedAt?: string;
-  lastSeen?: string;
+    id: string;
+    license_id: string;
+    device_id: string;
+    device_name: string | null;
+    platform: string | null;
+    last_seen: string;
+    activated_at: string;
 };
 
+function toDateString(value: Date | string | null | undefined) {
+    if (!value) {
+        return new Date().toISOString();
+    }
+
+    if (value instanceof Date) {
+        return value.toISOString();
+    }
+
+    return new Date(value).toISOString();
+}
+
+function toLicenseDocument(row: typeof licenses.$inferSelect): LicenseDocument {
+    return {
+        id: row.id,
+        user_id: row.userId,
+        email: row.email,
+        license_key: row.licenseKey,
+        plan_id: row.planId,
+        plan_name: row.planName,
+        status: row.status,
+        expires_at: row.expiresAt,
+        max_devices: row.maxDevices,
+        price: row.price,
+        created_at: toDateString(row.createdAt),
+        updated_at: toDateString(row.updatedAt),
+        signature: row.signature,
+    };
+}
+
+function toActivationDocument(row: typeof activations.$inferSelect): ActivationDocument {
+    return {
+        id: row.id,
+        license_id: row.licenseId,
+        device_id: row.deviceId,
+        device_name: row.deviceName,
+        platform: row.platform,
+        last_seen: toDateString(row.lastSeen),
+        activated_at: toDateString(row.activatedAt),
+    };
+}
+
 export function getLicenseLookupKey(value: string): string {
-  return value.trim().toUpperCase();
+    return value.trim().toUpperCase();
 }
 
 export function mapLicenseDocumentToLicense(document: LicenseDocument): LicenseLike {
-  return {
-    license_key: document.license_key ?? document.licenseKey,
-    email: document.email,
-    plan: document.plan ?? document.planId ?? document.planName,
-    expiry: document.expiry ?? document.expiresAt,
-    max_devices: document.max_devices ?? document.maxDevices,
-    issued_at: document.issued_at ?? document.issuedAt ?? document.$createdAt,
-    signature: document.signature,
-    is_revoked: document.is_revoked ?? document.isRevoked,
-  };
+    return {
+        license_key: document.license_key,
+        email: document.email,
+        plan: document.plan_name ?? document.plan_id ?? undefined,
+        expiry: document.expires_at ?? undefined,
+        max_devices: document.max_devices,
+        issued_at: document.created_at,
+        signature: document.signature ?? undefined,
+        is_revoked: document.status === "revoked",
+    };
 }
 
 export async function findLicenseByKey(licenseKey: string): Promise<LicenseDocument | null> {
-  const response = await serverDatabases.listDocuments<LicenseDocument>(DB_ID, LICENSES_COLLECTION_ID, [
-    Query.equal("licenseKey", getLicenseLookupKey(licenseKey)),
-    Query.limit(1),
-  ]);
+    const row = await db.query.licenses.findFirst({
+        where: (license, { eq: equals }) =>
+            equals(license.licenseKey, getLicenseLookupKey(licenseKey)),
+    });
 
-  return response.documents[0] ?? null;
+    return row ? toLicenseDocument(row) : null;
 }
 
 export async function listActivationsByLicenseId(licenseId: string): Promise<ActivationDocument[]> {
-  const response = await serverDatabases.listDocuments<ActivationDocument>(DB_ID, ACTIVATIONS_COLLECTION_ID, [
-    Query.equal("licenseId", licenseId),
-    Query.limit(100),
-  ]);
+    const rows = await db.query.activations.findMany({
+        where: (activation, { eq: equals }) => equals(activation.licenseId, licenseId),
+    });
 
-  return response.documents;
+    return rows.map(toActivationDocument);
 }
 
 export async function findActivationByDevice(
-  licenseId: string,
-  deviceId: string,
+    licenseId: string,
+    deviceId: string,
 ): Promise<ActivationDocument | null> {
-  try {
-    const response = await serverDatabases.listDocuments<ActivationDocument>(DB_ID, ACTIVATIONS_COLLECTION_ID, [
-      Query.equal("licenseId", licenseId),
-      Query.equal("deviceId", deviceId),
-      Query.limit(1),
-    ]);
+    const row = await db.query.activations.findFirst({
+        where: (activation, { and: andWhere, eq: equals }) =>
+            andWhere(eq(activation.licenseId, licenseId), equals(activation.deviceId, deviceId)),
+    });
 
-    return response.documents[0] ?? null;
-  } catch {
-    const activations = await listActivationsByLicenseId(licenseId);
-    return activations.find((activation) => activation.deviceId === deviceId) ?? null;
-  }
+    return row ? toActivationDocument(row) : null;
 }
 
 export async function upsertActivation(params: {
-  license: LicenseDocument;
-  deviceId: string;
-  deviceName: string;
+    license: LicenseDocument;
+    deviceId: string;
+    deviceName: string;
 }): Promise<{ activationId: string; isNew: boolean }> {
-  const now = new Date().toISOString();
-  const existing = await findActivationByDevice(params.license.$id, params.deviceId);
-  const permissions = params.license.userId
-    ? [
-        Permission.read(Role.user(params.license.userId)),
-        Permission.update(Role.user(params.license.userId)),
-        Permission.delete(Role.user(params.license.userId)),
-      ]
-    : undefined;
+    const existing = await findActivationByDevice(params.license.id, params.deviceId);
+    const now = new Date();
 
-  if (existing) {
-    await serverDatabases.updateDocument(DB_ID, ACTIVATIONS_COLLECTION_ID, existing.$id, {
-      deviceId: params.deviceId,
-      deviceName: params.deviceName,
-      activatedAt: existing.activatedAt ?? now,
-      lastSeen: now,
-    });
+    if (existing) {
+        await db
+            .update(activations)
+            .set({
+                deviceName: params.deviceName,
+                lastSeen: now,
+            })
+            .where(eq(activations.id, existing.id));
+
+        return {
+            activationId: existing.id,
+            isNew: false,
+        };
+    }
+
+    const [created] = await db
+        .insert(activations)
+        .values({
+            licenseId: params.license.id,
+            deviceId: params.deviceId,
+            deviceName: params.deviceName,
+            platform: null,
+            lastSeen: now,
+            activatedAt: now,
+        })
+        .returning();
 
     return {
-      activationId: existing.$id,
-      isNew: false,
+        activationId: created.id,
+        isNew: true,
     };
-  }
-
-  const created = await serverDatabases.createDocument(
-    DB_ID,
-    ACTIVATIONS_COLLECTION_ID,
-    ID.unique(),
-    {
-      licenseId: params.license.$id,
-      licenseKey: getLicenseLookupKey(params.license.licenseKey ?? params.license.license_key ?? ""),
-      userId: params.license.userId ?? "",
-      deviceId: params.deviceId,
-      deviceName: params.deviceName,
-      activatedAt: now,
-      lastSeen: now,
-    },
-    permissions,
-  );
-
-  return {
-    activationId: created.$id,
-    isNew: true,
-  };
 }
 
 export async function deleteActivationByDevice(params: {
-  licenseId: string;
-  deviceId: string;
+    licenseId: string;
+    deviceId: string;
 }): Promise<boolean> {
-  const activation = await findActivationByDevice(params.licenseId, params.deviceId);
+    const existing = await findActivationByDevice(params.licenseId, params.deviceId);
 
-  if (!activation) {
-    return false;
-  }
+    if (!existing) {
+        return false;
+    }
 
-  await serverDatabases.deleteDocument(DB_ID, ACTIVATIONS_COLLECTION_ID, activation.$id);
-  return true;
+    await db.delete(activations).where(eq(activations.id, existing.id));
+    return true;
 }

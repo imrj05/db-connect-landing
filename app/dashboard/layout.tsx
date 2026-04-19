@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { RiDashboardLine, RiUserLine, RiLogoutBoxLine, RiPriceTag3Line } from "react-icons/ri";
-import { account } from "@/lib/appwrite";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const handleSignOut = async () => {
         try {
-            await account.deleteSession("current");
+            await authClient.signOut();
             router.replace("/login");
         } catch {
             toast.error("Failed to sign out. Please try again.");

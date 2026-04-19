@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { RiHeartFill, RiTwitterFill, RiGithubFill, RiDiscordFill } from "react-icons/ri";
 import ThemeToggle from "./ThemeToggle";
 import Link from "next/link";
@@ -45,7 +46,7 @@ export default function Footer() {
                         <div className="max-w-sm">
                             <div className="mb-4 flex items-center gap-2.5">
                                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/70 bg-background/80 shadow-sm">
-                                    <img src="/icons/logo.svg" alt="DBConnect Logo" width="22" height="22" />
+                                    <Image src="/icons/logo.svg" alt="DBConnect Logo" width={22} height={22} />
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">

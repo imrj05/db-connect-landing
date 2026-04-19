@@ -1,9 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useEffectEvent, useState } from "react";
 import Link from "next/link";
-import { account, databases, DB_ID, LICENSES_COLLECTION_ID, ACTIVATIONS_COLLECTION_ID } from "@/lib/appwrite";
-import { Query } from "appwrite";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
     RiLoader5Line,
     RiUserLine,
@@ -21,22 +19,42 @@ import {
     RiSettings3Line,
     RiLoginBoxLine,
 } from "react-icons/ri";
-import type { Models } from "appwrite";
-type License = Models.Document & {
-    planId: string;
-    planName: string;
-    licenseKey: string;
-    status: "active" | "expired";
-    expiresAt: string;
-    maxDevices: number;
-    price: number;
+
+type Profile = {
+    id: string;
+    name: string | null;
+    email: string | null;
+    email_verified?: boolean;
+    created_at: string;
 };
+
+type License = {
+    id: string;
+    user_id: string;
+    license_key: string;
+    plan_id: string | null;
+    plan_name: string | null;
+    status: string;
+    expires_at: string | null;
+    max_devices: number;
+    price: number;
+    created_at: string;
+};
+
+type OverviewResponse = {
+    deviceCount: number;
+    license: License | null;
+    user: Profile;
+};
+
 function isLifetime(expiresAt: string) {
     return expiresAt === "lifetime" || new Date(expiresAt).getFullYear() - new Date().getFullYear() > 20;
 }
+
 function daysRemaining(expiresAt: string) {
     return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86_400_000));
 }
+
 function getInitials(name: string, email: string) {
     if (name) {
         const parts = name.trim().split(" ");
@@ -46,6 +64,7 @@ function getInitials(name: string, email: string) {
     }
     return email.slice(0, 2).toUpperCase();
 }
+
 function LoadingState() {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -53,6 +72,7 @@ function LoadingState() {
         </div>
     );
 }
+
 function DashboardStateNotice({
     title,
     description,
@@ -91,19 +111,21 @@ function DashboardStateNotice({
         </section>
     );
 }
+
 function Divider() {
     return <div className="h-px bg-border" />;
 }
+
 function isTokenError(error: unknown) {
     if (typeof error !== "object" || error === null) return false;
     const maybeError = error as { code?: unknown; message?: unknown };
     const message = typeof maybeError.message === "string" ? maybeError.message.toLowerCase() : "";
     return maybeError.code === 401 || message.includes("token") || message.includes("expired");
 }
+
 function DashboardContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+    const [user, setUser] = useState<Profile | null>(null);
     const [license, setLicense] = useState<License | null>(null);
     const [deviceCount, setDeviceCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -111,46 +133,37 @@ function DashboardContent() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [redirectingToLogin, setRedirectingToLogin] = useState(false);
 
-    const refreshDeviceCount = async (licenseId: string) => {
-        if (!ACTIVATIONS_COLLECTION_ID) return;
-
+    const loadOverview = useEffectEvent(async () => {
         try {
-            const devRes = await databases.listDocuments(DB_ID, ACTIVATIONS_COLLECTION_ID, [
-                Query.equal("licenseId", licenseId),
-            ]);
-            setDeviceCount(devRes.total);
-        } catch {
-            // Activations collection may not be set up yet
+            setErrorMessage(null);
+            const response = await fetch("/api/account/overview", {
+                cache: "no-store",
+            });
+
+            if (response.status === 401) {
+                setRedirectingToLogin(true);
+                router.replace("/login");
+                return;
+            }
+
+            const data = (await response.json()) as OverviewResponse & { error?: string };
+            if (!response.ok) {
+                throw new Error(data.error ?? "Failed to load dashboard.");
+            }
+
+            setUser(data.user);
+            setLicense(data.license);
+            setDeviceCount(data.deviceCount);
+        } catch (error) {
+            const maybeError = error as { message?: string };
+            setErrorMessage(maybeError.message ?? "We couldn't load your account details. Please try again.");
         }
-    };
+    });
 
     useEffect(() => {
         const init = async () => {
             try {
-                setErrorMessage(null);
-                const userId = searchParams.get("userId");
-                const secret = searchParams.get("secret");
-                if (userId && secret) {
-                    try {
-                        await account.createSession(userId, secret);
-                    } catch (err: unknown) {
-                        if (!isTokenError(err)) throw err;
-                    }
-                    window.history.replaceState({}, "", "/dashboard");
-                }
-                const me = await account.get();
-                setUser(me);
-                const licRes = await databases.listDocuments<License>(DB_ID, LICENSES_COLLECTION_ID, [
-                    Query.equal("userId", me.$id),
-                    Query.equal("status", "active"),
-                    Query.orderDesc("$createdAt"),
-                    Query.limit(1),
-                ]);
-                if (licRes.documents.length > 0) {
-                    const lic = licRes.documents[0];
-                    setLicense(lic);
-                    await refreshDeviceCount(lic.$id);
-                }
+                await loadOverview();
             } catch (err: unknown) {
                 if (isTokenError(err)) {
                     setRedirectingToLogin(true);
@@ -166,16 +179,16 @@ function DashboardContent() {
                 setLoading(false);
             }
         };
-        init();
-    }, [router, searchParams]);
+        void init();
+    }, [router]);
 
     useEffect(() => {
-        if (!license?.$id || !ACTIVATIONS_COLLECTION_ID) {
+        if (!license?.id) {
             return;
         }
 
         const syncDeviceCount = () => {
-            void refreshDeviceCount(license.$id);
+            void loadOverview();
         };
 
         const handleVisibilityChange = () => {
@@ -198,11 +211,11 @@ function DashboardContent() {
             window.removeEventListener("focus", syncDeviceCount);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [license?.$id]);
+    }, [license?.id]);
 
     const handleCopy = () => {
         if (!license) return;
-        navigator.clipboard.writeText(license.licenseKey);
+        navigator.clipboard.writeText(license.license_key);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -220,14 +233,13 @@ function DashboardContent() {
             />
         );
     }
-    const lifetime = license ? isLifetime(license.expiresAt) : false;
-    const days = license && !lifetime ? daysRemaining(license.expiresAt) : null;
+    const lifetime = license ? isLifetime(license.expires_at || "") : false;
+    const days = license && !lifetime && license.expires_at ? daysRemaining(license.expires_at) : null;
     const isExpiringSoon = days !== null && days <= 7;
     const isExpired = license?.status === "expired" || (days !== null && days === 0);
-    const devicePct = license ? Math.min(100, Math.round((deviceCount / license.maxDevices) * 100)) : 0;
+    const devicePct = license ? Math.min(100, Math.round((deviceCount / license.max_devices) * 100)) : 0;
     return (
         <div className="space-y-5 p-2 md:p-0">
-            {/* ── Page header ── */}
             <section className="dashboard-pane overflow-hidden p-6">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-foreground/12 to-transparent" />
                 <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -248,9 +260,7 @@ function DashboardContent() {
                     </div>
                 </div>
             </section>
-            {/* ── Profile + Plan cards ── */}
             <div className="grid gap-5 md:grid-cols-2">
-                {/* Profile card */}
                 <section className="dashboard-section flex flex-col gap-0">
                     <div className="dashboard-panel-header">
                         <div className="flex items-center gap-2">
@@ -261,10 +271,9 @@ function DashboardContent() {
                             <RiSettings3Line size={13} /> Edit
                         </Link>
                     </div>
-                    {/* Avatar + name */}
                     <div className="flex items-center gap-4 pb-4">
                         <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-elevated text-lg font-semibold text-foreground">
-                            {getInitials(user.name ?? "", user.email)}
+                            {getInitials(user.name ?? "", user.email ?? "")}
                         </div>
                         <div className="min-w-0">
                             <p className="truncate text-[15px] font-semibold text-foreground">
@@ -281,9 +290,7 @@ function DashboardContent() {
                             </span>
                             <div className="flex items-center gap-2">
                                 <span className="detail-value truncate">{user.email}</span>
-                                <span className={user.emailVerification ? "status-pill status-pill-active" : "status-pill status-pill-neutral"}>
-                                    {user.emailVerification ? "Verified" : "Unverified"}
-                                </span>
+                                <span className="status-pill status-pill-active">Verified</span>
                             </div>
                         </div>
                         <Divider />
@@ -299,12 +306,11 @@ function DashboardContent() {
                                 <RiCalendarLine size={13} /> Member since
                             </span>
                             <span className="detail-value">
-                                {new Date(user.$createdAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+                                {new Date(user.created_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
                             </span>
                         </div>
                     </div>
                 </section>
-                {/* Plan card */}
                 <section className="dashboard-section flex flex-col gap-0">
                     <div className="dashboard-panel-header">
                         <div className="flex items-center gap-2">
@@ -317,10 +323,9 @@ function DashboardContent() {
                     </div>
                     {license ? (
                         <div className="flex flex-col gap-0">
-                            {/* Plan name + status */}
                             <div className="flex items-center justify-between gap-3 pb-4">
                                 <div>
-                                    <p className="text-[15px] font-semibold text-foreground">{license.planName}</p>
+                                    <p className="text-[15px] font-semibold text-foreground">{license.plan_name}</p>
                                     <p className="mt-0.5 text-[13px] text-muted-foreground">
                                         {license.price === 0 ? "Free forever" : `₹${license.price}/mo`}
                                     </p>
@@ -331,14 +336,13 @@ function DashboardContent() {
                             </div>
                             <Divider />
                             <div className="flex flex-col gap-3 pt-4">
-                                {/* Expiry */}
                                 <div className="detail-row">
                                     <span className="detail-label flex items-center gap-1.5">
                                         <RiTimeLine size={13} /> Expires
                                     </span>
                                     <div className="flex items-center gap-2">
                                         <span className="detail-value">
-                                            {lifetime ? "Lifetime" : new Date(license.expiresAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+                                            {lifetime ? "Lifetime" : license.expires_at ? new Date(license.expires_at).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) : "N/A"}
                                         </span>
                                         {!lifetime && days !== null && (
                                             <span className={isExpiringSoon ? "status-pill status-pill-danger" : "status-pill status-pill-neutral"}>
@@ -348,14 +352,13 @@ function DashboardContent() {
                                     </div>
                                 </div>
                                 <Divider />
-                                {/* Devices with progress bar */}
                                 <div className="flex flex-col gap-2">
                                     <div className="detail-row">
                                         <span className="detail-label flex items-center gap-1.5">
                                             <RiDeviceLine size={13} /> Devices
                                         </span>
-                                        <span className={deviceCount >= license.maxDevices ? "detail-value text-rose-600 dark:text-rose-300" : "detail-value"}>
-                                            {deviceCount} / {license.maxDevices} used
+                                        <span className={deviceCount >= license.max_devices ? "detail-value text-rose-600 dark:text-rose-300" : "detail-value"}>
+                                            {deviceCount} / {license.max_devices} used
                                         </span>
                                     </div>
                                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-elevated">
@@ -366,14 +369,13 @@ function DashboardContent() {
                                     </div>
                                 </div>
                                 <Divider />
-                                {/* License key */}
                                 <div className="detail-row">
                                     <span className="detail-label flex items-center gap-1.5">
                                         <RiShieldCheckLine size={13} /> Key
                                     </span>
                                     <div className="flex items-center gap-2">
                                         <span className="font-mono text-[12px] tracking-[0.05em] text-foreground">
-                                            {license.licenseKey}
+                                            {license.license_key}
                                         </span>
                                         <button
                                             onClick={handleCopy}
@@ -409,25 +411,24 @@ function DashboardContent() {
                     )}
                 </section>
             </div>
-            {/* ── Stats row ── */}
             <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
                 {[
                     {
                         label: "Account",
                         icon: <RiUserLine size={14} />,
                         value: user.name || "—",
-                        sub: user.email,
+                        sub: user.email || "",
                     },
                     {
                         label: "Plan",
                         icon: <RiPriceTag3Line size={14} />,
-                        value: license ? license.planName : "None",
+                        value: license ? license.plan_name || "None" : "None",
                         sub: license ? (license.price === 0 ? "Free forever" : `₹${license.price}/mo`) : "No active plan",
                     },
                     {
                         label: "Devices",
                         icon: <RiDeviceLine size={14} />,
-                        value: license ? `${deviceCount} / ${license.maxDevices}` : "—",
+                        value: license ? `${deviceCount} / ${license.max_devices}` : "—",
                         sub: license ? "Active device slots" : "No license active",
                     },
                     {
@@ -452,6 +453,7 @@ function DashboardContent() {
         </div>
     );
 }
+
 export default function DashboardPage() {
     return (
         <React.Suspense fallback={<LoadingState />}>

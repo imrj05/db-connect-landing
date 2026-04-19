@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const activations = await listActivationsByLicenseId(licenseDocument.$id);
-    const existingActivation = activations.find((activation) => activation.deviceId === deviceId);
+    const activations = await listActivationsByLicenseId(licenseDocument.id);
+    const existingActivation = activations.find((activation) => activation.device_id === deviceId);
 
     if (!existingActivation && activations.length >= verification.normalizedLicense.maxDevices) {
       return withCors(request, Response.json({ error: "No activation slots remaining" }, { status: 409 }), ACTIVATE_METHODS);

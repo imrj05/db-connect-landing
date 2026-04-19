@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { account } from "@/lib/appwrite";
+import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import {
     RiLoader5Line,
@@ -11,41 +11,75 @@ import {
     RiEditLine,
 } from "react-icons/ri";
 import { toast } from "sonner";
-import type { Models } from "appwrite";
 import { getErrorMessage } from "@/lib/utils";
+
+type Profile = {
+    id: string;
+    name: string | null;
+    email: string | null;
+    created_at: string;
+};
 
 export default function ProfilePage() {
     const router = useRouter();
-    const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null);
+    const [user, setUser] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Name section
     const [name, setName] = useState("");
     const [savingName, setSavingName] = useState(false);
 
-    // Password section
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [savingPassword, setSavingPassword] = useState(false);
 
     useEffect(() => {
-        account
-            .get()
-            .then((me) => {
-                setUser(me);
-                setName(me.name ?? "");
-            })
-            .catch(() => router.replace("/login"))
-            .finally(() => setLoading(false));
+        const init = async () => {
+            try {
+                const response = await fetch("/api/account/profile", {
+                    cache: "no-store",
+                });
+                if (response.status === 401) {
+                    router.replace("/login");
+                    return;
+                }
+                const data = (await response.json()) as { error?: string; user?: Profile };
+                if (!response.ok || !data.user) {
+                    throw new Error(data.error ?? "Failed to load profile.");
+                }
+                setUser(data.user);
+                setName(data.user.name ?? "");
+            } catch {
+                router.replace("/login");
+            } finally {
+                setLoading(false);
+            }
+        };
+        init();
     }, [router]);
 
     const handleUpdateName = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name.trim()) return;
+        if (!name.trim() || !user) return;
         setSavingName(true);
         try {
-            const updated = await account.updateName(name.trim());
-            setUser(updated);
+            const { error: authError } = await authClient.updateUser({
+                name: name.trim(),
+            });
+            if (authError) throw authError;
+
+            const response = await fetch("/api/account/profile", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ name: name.trim() }),
+            });
+            const data = (await response.json()) as { error?: string; user?: Profile };
+            if (!response.ok || !data.user) {
+                throw new Error(data.error ?? "Failed to update name.");
+            }
+
+            setUser(data.user);
             toast.success("Name updated successfully.");
         } catch (err: unknown) {
             toast.error(getErrorMessage(err, "Failed to update name."));
@@ -60,9 +94,18 @@ export default function ProfilePage() {
             toast.error("New password must be at least 8 characters.");
             return;
         }
+        if (!oldPassword.trim()) {
+            toast.error("Use the password reset flow if this account was created with OAuth.");
+            return;
+        }
         setSavingPassword(true);
         try {
-            await account.updatePassword(newPassword, oldPassword);
+            const { error } = await authClient.changePassword({
+                currentPassword: oldPassword,
+                newPassword,
+                revokeOtherSessions: true,
+            });
+            if (error) throw error;
             setOldPassword("");
             setNewPassword("");
             toast.success("Password updated successfully.");
@@ -107,24 +150,22 @@ export default function ProfilePage() {
                         <div className="detail-row">
                             <span className="detail-label">User ID</span>
                             <span className="rounded-md border border-border bg-elevated px-2 py-1 font-mono text-xs text-muted-foreground">
-                                {user.$id}
+                                {user.id}
                             </span>
                         </div>
                         <div className="detail-row">
                             <span className="detail-label">Email</span>
                             <div className="flex items-center gap-1.5">
                                 <span className="detail-value">{user.email}</span>
-                                {user.emailVerification && (
-                                    <span className="status-pill status-pill-active gap-1">
-                                        <RiCheckLine size={11} /> Verified
-                                    </span>
-                                )}
+                                <span className="status-pill status-pill-active gap-1">
+                                    <RiCheckLine size={11} /> Verified
+                                </span>
                             </div>
                         </div>
                         <div className="detail-row">
                             <span className="detail-label">Member since</span>
                             <span className="detail-value">
-                                {new Date(user.$createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                                {new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                             </span>
                         </div>
                     </div>

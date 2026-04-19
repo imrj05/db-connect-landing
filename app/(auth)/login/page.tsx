@@ -4,55 +4,87 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { RiMailLine, RiLockLine, RiGoogleFill, RiGithubFill, RiLoader5Line } from "react-icons/ri";
 import { toast } from "sonner";
-import { account } from "@/lib/appwrite";
-import { OAuthProvider } from "appwrite";
+import { useAppAnalytics } from "@/app/_components/AppAnalyticsProvider";
+import { authClient } from "@/lib/auth-client";
+import { oauthProviders, type OAuthProvider } from "@/lib/auth-providers";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getErrorMessage } from "@/lib/utils";
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { trackEvent } = useAppAnalytics();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
-    const [oauthLoading, setOauthLoading] = useState<"google" | "github" | null>(null);
+    const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
 
-    // Redirect to dashboard if already logged in
     useEffect(() => {
-        account.get().then(() => router.replace("/dashboard")).catch(() => { });
+        const checkSession = async () => {
+            const { data } = await authClient.getSession();
+            if (data?.user) {
+                router.replace("/dashboard");
+            }
+        };
+        checkSession();
     }, [router]);
 
-    // Show error if Appwrite redirected back here due to OAuth failure
     useEffect(() => {
         const error = searchParams.get("error");
         if (error) {
-            toast.error(`OAuth failed: ${decodeURIComponent(error)}. Check your Appwrite OAuth provider settings.`);
+            toast.error(`OAuth failed: ${decodeURIComponent(error)}. Check your Better Auth provider settings.`);
             window.history.replaceState({}, "", "/login");
         }
     }, [searchParams]);
 
-    const handleOAuth = (provider: OAuthProvider) => {
-        const providerName = provider === OAuthProvider.Google ? "google" : "github";
-        setOauthLoading(providerName);
-        const origin = window.location.origin;
-        // createOAuth2Token: Appwrite redirects to /dashboard?userId=X&secret=Y on success
-        // The dashboard page exchanges the token for a real session
-        account.createOAuth2Token(
+    const handleOAuth = async (provider: OAuthProvider) => {
+        setOauthLoading(provider);
+        trackEvent("auth_oauth_started", {
+            flow: "login",
             provider,
-            `${origin}/dashboard`,
-            `${origin}/login?error=oauth_failed`
-        );
+        });
+        const { error } = await authClient.signIn.social({
+            provider,
+            callbackURL: "/dashboard",
+        });
+        if (error) {
+            setOauthLoading(null);
+            trackEvent("auth_oauth_failed", {
+                flow: "login",
+                provider,
+            });
+            toast.error(`OAuth failed: ${error.message}`);
+        }
     };
+
+    const providerIcons = {
+        google: RiGoogleFill,
+        github: RiGithubFill,
+    } as const;
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await account.createEmailPasswordSession(email, password);
+            const { error } = await authClient.signIn.email({
+                email,
+                password,
+                callbackURL: "/dashboard",
+            });
+            if (error) throw error;
+            trackEvent("auth_login_succeeded");
             toast.success("Welcome back!");
             router.push("/dashboard");
         } catch (err: unknown) {
-            toast.error(getErrorMessage(err, "Invalid credentials. Please try again."));
+            const authError = err as { status?: number; message?: string };
+            trackEvent("auth_login_failed", {
+                reason: authError.status === 403 ? "email_verification_required" : "invalid_credentials",
+            });
+            if (authError.status === 403) {
+                toast.error("Verify your email before signing in.");
+            } else {
+                toast.error(getErrorMessage(err, "Invalid credentials. Please try again."));
+            }
         } finally {
             setLoading(false);
         }
@@ -88,7 +120,7 @@ function LoginForm() {
                 <div className="form-field">
                     <div className="flex items-center justify-between gap-4">
                         <label className="form-label">Password</label>
-                        <a href="#" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Forgot password?</a>
+                        <Link href="/forgot-password" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Forgot password?</Link>
                     </div>
                     <div className="form-input-wrap">
                         <RiLockLine className="form-input-icon" size={18} />
@@ -114,24 +146,25 @@ function LoginForm() {
                 <div className="h-px flex-1 bg-border" />
             </div>
 
-            <div className="flex gap-3">
-                <button
-                    className="btn-secondary h-11 flex-1 justify-center text-sm"
-                    disabled={oauthLoading !== null}
-                    onClick={() => handleOAuth(OAuthProvider.Google)}
-                >
-                    {oauthLoading === "google" ? <RiLoader5Line className="animate-spin" size={18} /> : <RiGoogleFill size={18} />}
-                    Google
-                </button>
-                <button
-                    className="btn-secondary h-11 flex-1 justify-center text-sm"
-                    disabled={oauthLoading !== null}
-                    onClick={() => handleOAuth(OAuthProvider.Github)}
-                >
-                    {oauthLoading === "github" ? <RiLoader5Line className="animate-spin" size={18} /> : <RiGithubFill size={18} />}
-                    GitHub
-                </button>
-            </div>
+            {oauthProviders.length > 0 && (
+                <div className="flex gap-3">
+                    {oauthProviders.map((provider) => {
+                        const Icon = providerIcons[provider.id];
+
+                        return (
+                            <button
+                                key={provider.id}
+                                className="btn-secondary h-11 flex-1 justify-center text-sm"
+                                disabled={oauthLoading !== null}
+                                onClick={() => handleOAuth(provider.id)}
+                            >
+                                {oauthLoading === provider.id ? <RiLoader5Line className="animate-spin" size={18} /> : <Icon size={18} />}
+                                {provider.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}

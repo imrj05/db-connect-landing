@@ -3,10 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { account } from "@/lib/appwrite";
+import { authClient } from "@/lib/auth-client";
 import { RiDashboardLine, RiGithubFill, RiLogoutBoxLine } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
 export default function Navbar() {
     const router = useRouter();
     const [authState, setAuthState] = useState<"loading" | "logged-in" | "logged-out">("loading");
@@ -16,20 +17,25 @@ export default function Navbar() {
         { label: "Roadmap", href: "#roadmap" },
         { label: "Pricing", href: "#pricing" },
     ];
+
     useEffect(() => {
-        account.get()
-            .then(() => setAuthState("logged-in"))
-            .catch(() => setAuthState("logged-out"));
+        const checkSession = async () => {
+            const { data } = await authClient.getSession();
+            setAuthState(data?.user ? "logged-in" : "logged-out");
+        };
+        checkSession();
     }, []);
+
     const handleLogout = async () => {
         try {
-            await account.deleteSession("current");
+            await authClient.signOut();
         } catch {
             // session may already be gone
         }
         setAuthState("logged-out");
         router.push("/");
     };
+
     return (
         <header className="fixed inset-x-0 top-0 z-100 px-3 pt-3 sm:px-5">
             <div className="section-container px-0">

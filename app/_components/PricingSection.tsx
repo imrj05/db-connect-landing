@@ -1,22 +1,18 @@
 import { RiCheckboxCircleFill, RiDownloadCloudFill, RiRocketFill } from "react-icons/ri";
-import type { Models } from "node-appwrite";
 import { SparkleIcon } from "./FeatureIcons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { serverDatabases, DB_ID, PLANS_COLLECTION_ID, Query } from "@/lib/appwrite-server";
 import { PLANS as FALLBACK_PLANS } from "@/lib/plans";
 
 type PricingPlan = {
-    planId: string;
-    name: string;
-    priceLabel: string;
-    price: number;
-    maxDevices: number;
     durationDays: number;
     isPopular: boolean;
+    maxDevices: number;
+    name: string;
+    planId: string;
+    price: number;
+    priceLabel: string;
 };
-
-type PricingPlanDocument = Models.Document & PricingPlan;
 
 function formatPlanTerm(durationDays: number) {
     if (durationDays === 0) return "Lifetime access";
@@ -25,7 +21,7 @@ function formatPlanTerm(durationDays: number) {
     return `Renews every ${durationDays} days`;
 }
 
-function getPlanHighlights(plan: PricingPlan) {
+function getPlanHighlights(plan: { price: number; maxDevices: number; durationDays: number }) {
     return [
         `${plan.maxDevices} device${plan.maxDevices === 1 ? "" : "s"}`,
         formatPlanTerm(plan.durationDays),
@@ -34,29 +30,8 @@ function getPlanHighlights(plan: PricingPlan) {
     ];
 }
 
-async function getPricingPlans(): Promise<PricingPlan[]> {
-    try {
-        const response = await serverDatabases.listDocuments<PricingPlanDocument>(DB_ID, PLANS_COLLECTION_ID, [
-            Query.orderAsc("price"),
-            Query.limit(100),
-        ]);
-
-        if (response.documents.length > 0) {
-            return response.documents.map((plan) => ({
-                planId: plan.planId,
-                name: plan.name,
-                priceLabel: plan.priceLabel,
-                price: plan.price,
-                maxDevices: plan.maxDevices,
-                durationDays: plan.durationDays,
-                isPopular: plan.isPopular,
-            }));
-        }
-    } catch {
-        // Fall through to the local fallback if Appwrite isn't reachable.
-    }
-
-    return FALLBACK_PLANS.map((plan) => ({
+export default async function PricingSection() {
+    const pricingPlans: PricingPlan[] = FALLBACK_PLANS.map((plan) => ({
         planId: plan.id,
         name: plan.name,
         priceLabel: plan.priceLabel,
@@ -65,10 +40,6 @@ async function getPricingPlans(): Promise<PricingPlan[]> {
         durationDays: plan.durationDays,
         isPopular: plan.popular,
     }));
-}
-
-export default async function PricingSection() {
-    const pricingPlans = await getPricingPlans();
 
     return (
         <section
@@ -113,7 +84,7 @@ export default async function PricingSection() {
                                     </div>
                                     <div className="mb-2 flex items-baseline gap-1.5">
                                         <span className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-                                            {plan.price === 0 ? "$0" : plan.priceLabel.replace(/\/mo$/u, "")}
+                                            {plan.price === 0 ? "$0" : plan.priceLabel.replace(/\/mo$/u, "").replace(/₹/, "")}
                                         </span>
                                         {plan.price > 0 && (
                                             <span className="text-base font-medium text-muted-foreground">/ month</span>
@@ -159,7 +130,7 @@ export default async function PricingSection() {
 
                 <div className="mt-8 text-center">
                     <p className="mx-auto max-w-125 text-[13px] italic text-muted-foreground">
-                        Plans shown here are synced from your Appwrite plans collection.
+                        Pricing is defined in the application plan catalog and activated in your dashboard.
                     </p>
                 </div>
             </div>

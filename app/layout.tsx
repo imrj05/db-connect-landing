@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Mono, Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
+import { AppAnalyticsProvider } from "./_components/AppAnalyticsProvider";
 import { ThemeProvider } from "./_components/ThemeProvider";
 import { Toaster } from "sonner";
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
@@ -44,8 +45,10 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <Toaster richColors position="bottom-right" />
-                    {children}
+                    <AppAnalyticsProvider>
+                        <Toaster richColors position="bottom-right" />
+                        {children}
+                    </AppAnalyticsProvider>
                 </ThemeProvider>
             </body>
         </html>

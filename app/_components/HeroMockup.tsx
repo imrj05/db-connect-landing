@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "react-icons/ri";
@@ -52,10 +53,13 @@ export default function HeroMockup() {
                     const isActive = idx === activeIndex;
                     const imageSrc = isDark ? mockup.dark : mockup.light;
                     return (
-                        <img
+                        <Image
                             key={idx}
                             src={imageSrc}
                             alt={`DBConnect App Mockup - ${mockup.label}`}
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 1280px"
+                            priority={idx === 0}
                             className={cn(
                                 "left-0 top-0 block h-full w-full object-cover transition-[opacity,transform] duration-700 ease-in-out",
                                 isActive ? "relative z-10" : "absolute z-0"
