@@ -2,6 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { activations, licenses, profiles, type ActivationRow, type LicenseRow, type ProfileRow } from "@/lib/db/schema";
+import { createCanonicalLicensePayload } from "@/lib/license/sign";
 import { listActiveApplicationPlans } from "@/lib/plan-server";
 import type { ApplicationPlan } from "@/lib/plans";
 
@@ -211,6 +212,7 @@ export async function expireActiveLicenses(userId: string) {
 export async function createLicenseForUser(params: {
     email: string;
     expiresAt: string;
+    issuedAt?: string;
     licenseKey?: string;
     maxDevices: number;
     paymentReference?: string;
@@ -247,6 +249,8 @@ export async function createLicenseForUser(params: {
             maxDevices: params.maxDevices,
             price: params.plan.price,
             signature: params.signature,
+            createdAt: params.issuedAt ? new Date(params.issuedAt) : undefined,
+            updatedAt: params.issuedAt ? new Date(params.issuedAt) : undefined,
         })
         .returning();
 
@@ -278,6 +282,15 @@ export async function findProfileByUserId(userId: string) {
 }
 
 export function normalizeLicenseDocument(license: LicenseRow) {
+    const signedLicense = createCanonicalLicensePayload({
+        email: license.email,
+        expiry: license.expiresAt ?? "",
+        issuedAt: serializeDate(license.createdAt),
+        licenseKey: normalizeLicenseKey(license.licenseKey),
+        maxDevices: license.maxDevices,
+        plan: license.planId ?? license.planName ?? "",
+    });
+
     return {
         id: license.id,
         user_id: license.userId,
@@ -293,5 +306,9 @@ export function normalizeLicenseDocument(license: LicenseRow) {
         created_at: serializeDate(license.createdAt),
         updated_at: serializeDate(license.updatedAt),
         signature: license.signature,
+        signed_license: {
+            ...signedLicense,
+            signature: license.signature,
+        },
     };
 }

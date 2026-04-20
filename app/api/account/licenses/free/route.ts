@@ -36,6 +36,7 @@ export async function POST() {
         userId: session.user.id,
         email: session.user.email,
         expiresAt: signed.expiry,
+        issuedAt,
         licenseKey,
         maxDevices: plan.maxDevices,
         plan,

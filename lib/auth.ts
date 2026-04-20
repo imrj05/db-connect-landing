@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { db } from "@/lib/db";
-import { sendAuthEmail } from "@/lib/email";
+import { buildResetPasswordEmail, buildVerifyEmail, sendAuthEmail } from "@/lib/email";
 
 const configuredSocialProviders = {
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -36,11 +36,13 @@ export const auth = betterAuth({
         requireEmailVerification: true,
         autoSignIn: false,
         sendResetPassword: async ({ user, url }) => {
+            const email = buildResetPasswordEmail(url);
+
             await sendAuthEmail({
                 to: user.email,
-                subject: "Reset your DBConnect password",
-                text: `Reset your password by opening: ${url}`,
-                html: `<p>Reset your password by opening <a href="${url}">this link</a>.</p>`,
+                subject: email.subject,
+                text: email.text,
+                html: email.html,
             });
         },
     },
@@ -49,11 +51,13 @@ export const auth = betterAuth({
         sendOnSignIn: true,
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url }) => {
+            const email = buildVerifyEmail(url);
+
             await sendAuthEmail({
                 to: user.email,
-                subject: "Verify your DBConnect email",
-                text: `Verify your email by opening: ${url}`,
-                html: `<p>Verify your email by opening <a href="${url}">this link</a>.</p>`,
+                subject: email.subject,
+                text: email.text,
+                html: email.html,
             });
         },
     },

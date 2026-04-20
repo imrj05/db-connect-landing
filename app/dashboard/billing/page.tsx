@@ -62,6 +62,8 @@ type BillingResponse = {
 type RazorpayOrderResponse = {
     amount: number;
     currency: string;
+    keyId: string;
+    mode: "live" | "test";
     orderId: string;
     error?: string;
 };
@@ -254,7 +256,7 @@ export default function BillingPage() {
                 }
 
                 const rzp = new Razorpay({
-                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    key: orderData.keyId,
                     amount: orderData.amount,
                     currency: orderData.currency,
                     name: "DBConnect",

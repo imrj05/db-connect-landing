@@ -8,7 +8,7 @@ This document explains how DB Connect license activation works, how the desktop 
 
 DB Connect uses a signed license model.
 
-- The server creates a license record in Appwrite.
+- The server creates a license record in Postgres.
 - The server signs the license payload with the private key.
 - The desktop app contains the public key.
 - The desktop app verifies the license locally with the public key.
@@ -33,7 +33,7 @@ The signed fields are:
 
 The server signs the canonical version of this payload and stores the resulting `signature` with the license.
 
-The Appwrite license document also stores operational fields such as:
+The license row in Postgres also stores operational fields such as:
 
 - `userId`
 - `planId`
@@ -59,7 +59,7 @@ Server flow:
 3. A new license key is generated.
 4. The server builds a signed license payload.
 5. The payload is signed using `LICENSE_PRIVATE_KEY`.
-6. The full license document is stored in Appwrite.
+6. The full license row is stored in Postgres.
 
 ## First Activation
 
@@ -83,7 +83,7 @@ Server checks:
 
 1. Input format is validated.
 2. Rate limiting is applied.
-3. The license is loaded from Appwrite.
+3. The license is loaded from Postgres.
 4. The signed payload is verified using the public key logic.
 5. Expiry is checked.
 6. Revocation is checked.
@@ -152,7 +152,7 @@ Because the app is offline, revocation can only be enforced from the last synced
 
 The local verifier is the part of the desktop app that decides whether a stored license is still trusted when the app starts without network access.
 
-Its job is not to talk to Appwrite.
+Its job is not to talk to the backend database.
 
 Its job is to prove three things locally:
 

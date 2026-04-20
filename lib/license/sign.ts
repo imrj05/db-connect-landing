@@ -1,13 +1,7 @@
 import crypto from "crypto";
-import type { SupportedLicenseAlgorithm } from "@/lib/license/types";
-export type LicenseSignaturePayload = {
-  email: string;
-  expiry: string;
-  issued_at: string;
-  license_key: string;
-  max_devices: number;
-  plan: string;
-};
+import type { CanonicalLicensePayload, SupportedLicenseAlgorithm } from "@/lib/license/types";
+
+export type LicenseSignaturePayload = CanonicalLicensePayload;
 const DEFAULT_ALGORITHM: SupportedLicenseAlgorithm = "RSASSA-PKCS1-v1_5";
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") {
@@ -66,6 +60,24 @@ async function importPrivateKey(privateKeyPem: string, algorithm: SupportedLicen
 export function buildLicenseSignaturePayload(payload: LicenseSignaturePayload): string {
   return stableStringify(payload);
 }
+
+export function createCanonicalLicensePayload(params: {
+  email: string;
+  expiry: string;
+  issuedAt: string;
+  licenseKey: string;
+  maxDevices: number;
+  plan: string;
+}): CanonicalLicensePayload {
+  return {
+    email: params.email,
+    expiry: params.expiry,
+    issued_at: params.issuedAt,
+    license_key: params.licenseKey,
+    max_devices: params.maxDevices,
+    plan: params.plan,
+  };
+}
 export async function signLicensePayload(
   payload: LicenseSignaturePayload,
   options?: {
@@ -98,14 +110,7 @@ export async function buildSignedLicenseData(params: {
   maxDevices: number;
   plan: string;
 }) {
-  const signaturePayload: LicenseSignaturePayload = {
-    email: params.email,
-    expiry: params.expiry,
-    issued_at: params.issuedAt,
-    license_key: params.licenseKey,
-    max_devices: params.maxDevices,
-    plan: params.plan,
-  };
+  const signaturePayload = createCanonicalLicensePayload(params);
   return {
     email: params.email,
     expiry: params.expiry,

@@ -12,6 +12,7 @@ import {
 import { auth } from "@/lib/auth";
 import { buildSignedLicenseData } from "@/lib/license/sign";
 import { findPlanById } from "@/lib/plan-server";
+import { getRazorpayConfig } from "@/lib/razorpay";
 import { getErrorMessage } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
                 razorpay_signature?: string;
             };
 
-        const secret = process.env.RAZORPAY_KEY_SECRET;
+        const secret = getRazorpayConfig().keySecret;
         if (!secret) {
             return Response.json({ error: "Razorpay not configured" }, { status: 503 });
         }
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
             userId: session.user.id,
             email: session.user.email,
             expiresAt,
+            issuedAt,
             licenseKey,
             maxDevices: plan.maxDevices,
             paymentReference: razorpay_payment_id,

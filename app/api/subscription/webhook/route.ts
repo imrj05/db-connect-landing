@@ -10,6 +10,7 @@ import type { NextRequest } from "next/server";
 import { createLicenseForUser, findProfileByUserId, generateLicenseKey, getExpiryDate } from "@/lib/account-server";
 import { buildSignedLicenseData } from "@/lib/license/sign";
 import { findPlanById } from "@/lib/plan-server";
+import { getRazorpayConfig } from "@/lib/razorpay";
 import { getErrorMessage } from "@/lib/utils";
 
 interface RazorpayPaymentEntity {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature") ?? "";
 
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const secret = getRazorpayConfig().webhookSecret;
     if (!secret) {
         console.error("[webhook] RAZORPAY_WEBHOOK_SECRET is not set");
         return Response.json({ error: "Webhook secret not configured" }, { status: 503 });
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
             userId,
             email: userEmail,
             expiresAt,
+            issuedAt,
             licenseKey,
             maxDevices: plan.maxDevices,
             paymentReference: payment.id,

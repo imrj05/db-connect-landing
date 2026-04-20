@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { activations, licenses } from "@/lib/db/schema";
 import type { LicenseLike } from "@/lib/license/types";
+import { createCanonicalLicensePayload } from "@/lib/license/sign";
 
 export type LicenseDocument = {
     id: string;
@@ -78,12 +79,14 @@ export function getLicenseLookupKey(value: string): string {
 
 export function mapLicenseDocumentToLicense(document: LicenseDocument): LicenseLike {
     return {
-        license_key: document.license_key,
-        email: document.email,
-        plan: document.plan_name ?? document.plan_id ?? undefined,
-        expiry: document.expires_at ?? undefined,
-        max_devices: document.max_devices,
-        issued_at: document.created_at,
+        ...createCanonicalLicensePayload({
+            email: document.email,
+            expiry: document.expires_at ?? "",
+            issuedAt: document.created_at,
+            licenseKey: document.license_key,
+            maxDevices: document.max_devices,
+            plan: document.plan_id ?? document.plan_name ?? "",
+        }),
         signature: document.signature ?? undefined,
         is_revoked: document.status === "revoked",
     };

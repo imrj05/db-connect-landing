@@ -1,15 +1,10 @@
 import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
-import Razorpay from "razorpay";
 
 import { ensureProfileForUser } from "@/lib/account-server";
 import { auth } from "@/lib/auth";
 import { findPlanById } from "@/lib/plan-server";
-
-const razorpay = new Razorpay({
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
-    key_secret: process.env.RAZORPAY_KEY_SECRET ?? "",
-});
+import { createRazorpayClient, getRazorpayConfig } from "@/lib/razorpay";
 
 export async function POST(req: NextRequest) {
     try {
@@ -30,11 +25,14 @@ export async function POST(req: NextRequest) {
         if (plan.price === 0) {
             return Response.json({ error: "Free plan does not require a payment order" }, { status: 400 });
         }
-        if (!process.env.RAZORPAY_KEY_SECRET) {
+        const razorpayConfig = getRazorpayConfig();
+        if (!razorpayConfig.keyId || !razorpayConfig.keySecret) {
             return Response.json({ error: "Razorpay is not configured on this server" }, { status: 503 });
         }
 
         await ensureProfileForUser(session.user);
+
+        const razorpay = createRazorpayClient();
 
         const order = await razorpay.orders.create({
             amount: plan.pricePaise,
@@ -51,6 +49,8 @@ export async function POST(req: NextRequest) {
             orderId: order.id,
             amount: order.amount,
             currency: order.currency,
+            keyId: razorpayConfig.keyId,
+            mode: razorpayConfig.mode,
         });
     } catch (error) {
         const maybeError = error as { message?: string };

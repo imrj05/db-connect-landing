@@ -43,3 +43,12 @@ export type LicenseVerificationResult = {
 };
 
 export type SupportedLicenseAlgorithm = "RSASSA-PKCS1-v1_5" | "ECDSA-P256";
+
+export type CanonicalLicensePayload = {
+  email: string;
+  expiry: string;
+  issued_at: string;
+  license_key: string;
+  max_devices: number;
+  plan: string;
+};
